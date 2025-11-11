@@ -5,6 +5,7 @@ import 'highlight.js/styles/github-dark.min.css';
 import UploadArea from './UploadArea';
 import SlideViewer from './SlideViewer';
 import Navigation from './Navigation';
+import SlideList from './SlideList';
 import { Sparkles, AlertCircle } from 'lucide-react';
 import '../styles/presentation.css';
 
@@ -19,10 +20,19 @@ const parseMarkdownSafe = (md) => {
 const Presentation = () => {
   const [slides, setSlides] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showSlideList, setShowSlideList] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [warning, setWarning] = useState('');
   const slideContentRef = useRef(null);
   const slideContainerRef = useRef(null);
+  const [highContrast, setHighContrast] = useState(() => {
+    try { return localStorage.getItem('presentation-high-contrast') === '1'; } catch { return false; }
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem('presentation-high-contrast', highContrast ? '1' : '0'); } catch {}
+  }, [highContrast]);
 
   marked.setOptions({
     highlight: function(code, lang) {
@@ -40,6 +50,10 @@ const Presentation = () => {
   });
 
   const handleFileUpload = async (e, options = {}) => {
+    if (options?.error) {
+      setError(options.error);
+      return;
+    }
     const files = Array.from(e?.target?.files || []);
     if (files.length === 0) return;
     setLoading(true); setError('');
@@ -49,12 +63,22 @@ const Presentation = () => {
         const raw = await file.text();
         const marker = (options.delimiter || '---').trim();
         const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp('^\\s*' + esc(marker) + '\\s*$', 'm');
-        const parts = raw.split(new RegExp('\\r?\\n' + '\\s*' + esc(marker) + '\\s*' + '\\r?\\n'));
-        const slidesParts = parts.length > 1 ? parts : raw.split(regex);
+          const lineRegex = new RegExp('^\\s*' + esc(marker) + '\\s*$', 'gm');
+          let slidesParts = raw.split(lineRegex).map((p) => p.trim()).filter(Boolean);
+          if (slidesParts.length <= 1) {
+            const altRegex = new RegExp('\\r?\\n\\s*' + esc(marker) + '\\s*\\r?\\n');
+            slidesParts = raw.split(altRegex).map((p) => p.trim()).filter(Boolean);
+          }
+          if (slidesParts.length === 0) {
+            slidesParts = [raw.trim()];
+            setWarning('Marcador não encontrado — o arquivo será tratado como um único slide.');
+          } else {
+            setWarning('');
+          }
         const loadedSlides = slidesParts.map((content, i) => ({ name: `${file.name.replace('.md','')}-${i+1}`, content, html: parseMarkdownSafe(content) }));
         setSlides(loadedSlides);
         setCurrentSlide(0);
+        setShowSlideList(true);
         return;
       }
 
@@ -65,13 +89,11 @@ const Presentation = () => {
       }));
       setSlides(loadedSlides);
       setCurrentSlide(0);
+      setShowSlideList(true);
     } catch (err) {
       setError('Erro ao carregar arquivos: ' + (err?.message || err));
     } finally { setLoading(false); }
   };
-
-  const nextSlide = () => { if (currentSlide < slides.length - 1) setCurrentSlide(currentSlide + 1); };
-  const prevSlide = () => { if (currentSlide > 0) setCurrentSlide(currentSlide - 1); };
 
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -93,9 +115,19 @@ const Presentation = () => {
   useEffect(() => { if (slideContainerRef.current && slides.length > 0) slideContainerRef.current.scrollTo({ top:0, behavior:'smooth' }); }, [currentSlide, slides.length]);
 
   return (
-    <div className="presentation-container">
+    <div className={`presentation-container${highContrast ? ' high-contrast' : ''}`}>
       {slides.length === 0 ? (
         <div className="upload-wrapper">
+          <div style={{ position: 'absolute', top: 16, right: 16 }}>
+            <button
+              className="reload-btn"
+              onClick={() => setHighContrast((v) => !v)}
+              aria-pressed={highContrast}
+              aria-label="Toggle alto contraste"
+            >
+              {highContrast ? 'Contraste Padrão' : 'Alto Contraste'}
+            </button>
+          </div>
           <UploadArea onFilesChange={handleFileUpload} loading={loading} />
 
           <div className="instructions">
@@ -108,18 +140,30 @@ const Presentation = () => {
 
           {loading && <div className="message"><Sparkles /> Carregando...</div>}
           {error && <div className="message error"><AlertCircle /> {error}</div>}
+          {warning && <div className="message" style={{ color: '#a16207', background: '#fff7ed', padding: 8, borderRadius: 6 }}>{warning}</div>}
         </div>
       ) : (
         <>
-          <SlideViewer html={slides[currentSlide].html} slideContainerRef={slideContainerRef} slideContentRef={slideContentRef} />
+          {showSlideList ? (
+            <SlideList
+              slides={slides}
+              onReorder={(newSlides) => setSlides(newSlides)}
+              onStart={() => { setShowSlideList(false); setCurrentSlide(0); setWarning(''); }}
+              onRemove={(idx) => { const copy = slides.slice(); copy.splice(idx,1); setSlides(copy); }}
+            />
+          ) : (
+            <>
+              <SlideViewer html={slides[currentSlide].html} slideContainerRef={slideContainerRef} slideContentRef={slideContentRef} />
 
-          <Navigation
-            currentSlide={currentSlide}
-            slidesLength={slides.length}
-            onPrev={() => setCurrentSlide((s) => Math.max(0, s - 1))}
-            onNext={() => setCurrentSlide((s) => Math.min(slides.length - 1, s + 1))}
-            onReset={() => { setSlides([]); setCurrentSlide(0); setError(''); }}
-          />
+              <Navigation
+                currentSlide={currentSlide}
+                slidesLength={slides.length}
+                onPrev={() => setCurrentSlide((s) => Math.max(0, s - 1))}
+                onNext={() => setCurrentSlide((s) => Math.min(slides.length - 1, s + 1))}
+                onReset={() => { setSlides([]); setCurrentSlide(0); setError(''); setShowSlideList(false); }}
+              />
+            </>
+          )}
         </>
       )}
     </div>
