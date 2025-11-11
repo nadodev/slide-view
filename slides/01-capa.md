@@ -1,4 +1,4 @@
-# 🎨 Aurea Design System
+# 🎨 Aurea Design System 3
 
 **Padronização, excelência e identidade nos ambientes digitais da Unoesc**
 

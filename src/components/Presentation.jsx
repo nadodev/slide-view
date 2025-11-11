@@ -4,8 +4,11 @@ import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.min.css';
 import UploadArea from './UploadArea';
 import SlideViewer from './SlideViewer';
+import { useMemo } from 'react';
 import Navigation from './Navigation';
 import SlideList from './SlideList';
+import PresenterView from './PresenterView';
+import EditPanel from './EditPanel';
 import { Sparkles, AlertCircle } from 'lucide-react';
 import '../styles/presentation.css';
 
@@ -49,6 +52,84 @@ const Presentation = () => {
     gfm: true
   });
 
+  const [presenterMode, setPresenterMode] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draftContent, setDraftContent] = useState('');
+  const [focusMode, setFocusMode] = useState(false);
+  const [editorFocus, setEditorFocus] = useState(false); // full-screen edit panel
+
+  // Disable page scroll while in focus mode
+  useEffect(() => {
+    if (focusMode) {
+      const prevX = document.body.style.overflowX;
+      const prevY = document.body.style.overflowY;
+      document.body.style.overflowX = 'hidden';
+      document.body.style.overflowY = 'auto';
+      return () => {
+        document.body.style.overflowX = prevX || '';
+        document.body.style.overflowY = prevY || '';
+      };
+    }
+    return undefined;
+  }, [focusMode]);
+
+  // Attempt to save a slide's markdown to a local file using the File System Access API when available.
+  const saveSlideToFile = async (index, content) => {
+    try {
+      const slide = slides[index];
+      if (!slide) return;
+      const supportsFS = typeof window !== 'undefined' && 'showSaveFilePicker' in window;
+      if (supportsFS) {
+        // If we already have a handle in memory, reuse it; otherwise ask where to save
+        let handle = slide._fileHandle;
+        if (!handle) {
+          handle = await window.showSaveFilePicker({
+            suggestedName: (slide.name?.endsWith('.md') ? slide.name : `${slide.name || 'slide'}.md`),
+            types: [
+              { description: 'Markdown', accept: { 'text/markdown': ['.md'] } },
+              { description: 'Text', accept: { 'text/plain': ['.txt'] } }
+            ]
+          });
+          // Stash handle in memory for this session only (not persisted)
+          setSlides(prev => {
+            const cp = prev.slice();
+            if (cp[index]) cp[index]._fileHandle = handle;
+            return cp;
+          });
+        }
+        const writable = await handle.createWritable();
+        await writable.write(content);
+        await writable.close();
+      } else {
+        // Fallback: trigger a download of the current content
+        const blob = new Blob([content], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = (slide.name?.endsWith('.md') ? slide.name : `${slide.name || 'slide'}.md`);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      // Swallow errors silently or optionally set a warning
+      console.warn('Falha ao salvar arquivo:', err);
+      setWarning('Não foi possível salvar diretamente no arquivo. Seu navegador pode não suportar, ou a permissão foi negada.');
+      setTimeout(() => setWarning(''), 4000);
+    }
+  };
+
+  const extractNotes = (text) => {
+    const notes = [];
+    if (!text) return { clean: text || '', notes };
+    const cleaned = text.replace(/<!--\s*note:\s*([\s\S]*?)-->/gi, (m, p1) => {
+      if (p1 && p1.trim()) notes.push(p1.trim());
+      return '';
+    });
+    return { clean: cleaned.trim(), notes };
+  };
+
   const handleFileUpload = async (e, options = {}) => {
     if (options?.error) {
       setError(options.error);
@@ -69,13 +150,17 @@ const Presentation = () => {
             const altRegex = new RegExp('\\r?\\n\\s*' + esc(marker) + '\\s*\\r?\\n');
             slidesParts = raw.split(altRegex).map((p) => p.trim()).filter(Boolean);
           }
-          if (slidesParts.length === 0) {
-            slidesParts = [raw.trim()];
-            setWarning('Marcador não encontrado — o arquivo será tratado como um único slide.');
-          } else {
-            setWarning('');
+          // If after attempts we still have a single part, the marker wasn't present — treat as blocking error.
+          if (slidesParts.length <= 1) {
+            setError('Marcador não encontrado — nenhum slide foi carregado. Verifique o marcador ou desmarque a opção de dividir.');
+            setLoading(false);
+            return;
           }
-        const loadedSlides = slidesParts.map((content, i) => ({ name: `${file.name.replace('.md','')}-${i+1}`, content, html: parseMarkdownSafe(content) }));
+          setWarning('');
+        const loadedSlides = slidesParts.map((content, i) => {
+          const { clean, notes } = extractNotes(content);
+          return { name: `${file.name.replace('.md','')}-${i+1}`, content: clean, notes, html: parseMarkdownSafe(clean) };
+        });
         setSlides(loadedSlides);
         setCurrentSlide(0);
         setShowSlideList(true);
@@ -84,8 +169,9 @@ const Presentation = () => {
 
       const sortedFiles = files.sort((a,b) => a.name.localeCompare(b.name));
       const loadedSlides = await Promise.all(sortedFiles.map(async (file) => {
-        const content = await file.text();
-        return { name: file.name.replace('.md',''), content, html: parseMarkdownSafe(content) };
+        const raw = await file.text();
+        const { clean, notes } = extractNotes(raw);
+        return { name: file.name.replace('.md',''), content: clean, notes, html: parseMarkdownSafe(clean) };
       }));
       setSlides(loadedSlides);
       setCurrentSlide(0);
@@ -97,6 +183,24 @@ const Presentation = () => {
 
   useEffect(() => {
     const handleKeyPress = (e) => {
+      // Ignore global shortcuts while editing or typing in inputs/textareas/contenteditable
+      const target = e.target;
+      const tag = target?.tagName?.toLowerCase();
+      if (editing || tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
+      const k = e.key.toLowerCase();
+      if (k === 'h') { // Toggle focus mode
+        if (!presenterMode) setFocusMode((v) => !v);
+        return;
+      }
+      if (k === 'e') { // Edit shortcut
+        if (!presenterMode && slides.length > 0) {
+          setDraftContent(slides[currentSlide].content || '');
+          setEditing(true);
+          return;
+        }
+      }
+      if (k === 'f') { toggleFullscreen(); }
+      if (k === 'p') { setPresenterMode((v) => !v); }
       if (e.key === 'ArrowRight' || e.key === ' ') { if (currentSlide < slides.length - 1) setCurrentSlide(currentSlide + 1); }
       if (e.key === 'ArrowLeft') { if (currentSlide > 0) setCurrentSlide(currentSlide - 1); }
       if (e.key === 'Home') setCurrentSlide(0);
@@ -104,7 +208,7 @@ const Presentation = () => {
     };
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [currentSlide, slides.length]);
+  }, [currentSlide, slides.length, editing, presenterMode]);
 
   useEffect(() => {
     if (slideContentRef.current && slides.length > 0) {
@@ -114,8 +218,47 @@ const Presentation = () => {
 
   useEffect(() => { if (slideContainerRef.current && slides.length > 0) slideContainerRef.current.scrollTo({ top:0, behavior:'smooth' }); }, [currentSlide, slides.length]);
 
+  useEffect(() => {
+    try {
+      if (slides && slides.length > 0) {
+        const payload = slides.map((s) => ({ name: s.name, content: s.content, notes: s.notes || [] }));
+        localStorage.setItem('presentation-slides', JSON.stringify(payload));
+      } else {
+        localStorage.removeItem('presentation-slides');
+      }
+    } catch (err) {
+    }
+  }, [slides]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('presentation-slides');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const loaded = parsed.map((p) => ({ name: p.name, content: p.content, notes: p.notes || [], html: parseMarkdownSafe(p.content) }));
+          setSlides(loaded);
+          setShowSlideList(true);
+        }
+      }
+    } catch (err) {}
+  }, []);
+
+  // Fullscreen helper
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      // ignore
+    }
+  };
+
   return (
-    <div className={`presentation-container${highContrast ? ' high-contrast' : ''}`}>
+  <div className={`presentation-container${highContrast ? ' high-contrast' : ''}${presenterMode ? ' presenter-full' : ''}${focusMode ? ' focus-mode' : ''}`}>
       {slides.length === 0 ? (
         <div className="upload-wrapper">
           <div style={{ position: 'absolute', top: 16, right: 16 }}>
@@ -147,24 +290,94 @@ const Presentation = () => {
           {showSlideList ? (
             <SlideList
               slides={slides}
-              onReorder={(newSlides) => setSlides(newSlides)}
-              onStart={() => { setShowSlideList(false); setCurrentSlide(0); setWarning(''); }}
-              onRemove={(idx) => { const copy = slides.slice(); copy.splice(idx,1); setSlides(copy); }}
+              onReorder={(newSlides) => { setSlides(newSlides); setError(''); setWarning(''); }}
+              onStart={() => { setShowSlideList(false); setCurrentSlide(0); setWarning(''); setError(''); }}
+              onRemove={(idx) => { const copy = slides.slice(); copy.splice(idx,1); setSlides(copy); setCurrentSlide((c) => Math.min(c, Math.max(0, copy.length - 1))); if (copy.length === 0) setPresenterMode(false); }}
+              highContrast={highContrast}
+              onToggleContrast={() => setHighContrast((v) => !v)}
             />
           ) : (
             <>
-              <SlideViewer html={slides[currentSlide].html} slideContainerRef={slideContainerRef} slideContentRef={slideContentRef} />
+              {presenterMode ? (
+                <PresenterView
+                  currentHtml={slides[currentSlide].html}
+                  currentIndex={currentSlide}
+                  slidesLength={slides.length}
+                  onNext={() => setCurrentSlide((s) => Math.min(slides.length - 1, s + 1))}
+                  onPrev={() => setCurrentSlide((s) => Math.max(0, s - 1))}
+                  onExit={() => setPresenterMode(false)}
+                />
+              ) : (
+                <>
+                  <div className="presentation-with-thumbs">
+                    {!focusMode && !presenterMode && (
+                      <aside className="thumbs-rail" aria-label="Lista de miniaturas">
+                        <ul>
+                          {slides.map((s, idx) => {
+                            const active = idx === currentSlide;
+                            const previewText = (s.content || '').replace(/[#`>*_\-]/g,'').slice(0,70);
+                            return (
+                              <li key={idx}>
+                                <button
+                                  type="button"
+                                  className={`thumb-item${active ? ' active' : ''}`}
+                                  onClick={() => setCurrentSlide(idx)}
+                                  aria-label={`Ir para slide ${idx+1}`}
+                                >
+                                  <span className="thumb-number">{idx+1}</span>
+                                  <span className="thumb-text">{previewText || 'Slide vazio'}</span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </aside>
+                    )}
+                    <div className="presentation-main">
+                      <SlideViewer html={slides[currentSlide].html} slideContainerRef={slideContainerRef} slideContentRef={slideContentRef} />
+                    </div>
+                  </div>
 
-              <Navigation
-                currentSlide={currentSlide}
-                slidesLength={slides.length}
-                onPrev={() => setCurrentSlide((s) => Math.max(0, s - 1))}
-                onNext={() => setCurrentSlide((s) => Math.min(slides.length - 1, s + 1))}
-                onReset={() => { setSlides([]); setCurrentSlide(0); setError(''); setShowSlideList(false); }}
-              />
+                  <Navigation
+                    currentSlide={currentSlide}
+                    slidesLength={slides.length}
+                    onPrev={() => setCurrentSlide((s) => Math.max(0, s - 1))}
+                    onNext={() => setCurrentSlide((s) => Math.min(slides.length - 1, s + 1))}
+                        onEdit={() => { setDraftContent(slides[currentSlide].content || ''); setEditing(true); }}
+                        onToggleFocus={() => setFocusMode((v) => !v)}
+                        focusMode={focusMode}
+                        onReset={() => { setSlides([]); setCurrentSlide(0); setError(''); setShowSlideList(false); setPresenterMode(false); }}
+                  />
+                </>
+              )}
             </>
           )}
         </>
+      )}
+          <EditPanel
+            open={editing}
+            value={draftContent}
+            onChange={setDraftContent}
+            onCancel={() => setEditing(false)}
+            onSave={() => {
+              setSlides((prev) => {
+                const copy = prev.slice();
+                const item = copy[currentSlide];
+                if (item) {
+                  item.content = draftContent;
+                  item.html = parseMarkdownSafe(draftContent);
+                }
+                return copy;
+              });
+              setEditing(false);
+              // Try saving to file on each save; this will prompt once per slide
+              saveSlideToFile(currentSlide, draftContent);
+            }}
+            editorFocus={editorFocus}
+            onToggleEditorFocus={() => setEditorFocus(v => !v)}
+          />
+      {focusMode && (
+        <div className="focus-indicator" aria-live="polite">Focus Mode ON (H para sair)</div>
       )}
     </div>
   );
