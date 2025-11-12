@@ -1,7 +1,6 @@
-import React from 'react';
-import { ChevronLeft, ChevronRight, Pencil, Eye, EyeOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Eye, EyeOff, Download, Copy } from 'lucide-react';
 
-export default function Navigation({ currentSlide, slidesLength, onPrev, onNext, onReset, onEdit, onToggleFocus, focusMode }) {
+export default function Navigation({ currentSlide, slidesLength, onPrev, onNext, onReset, onEdit, onToggleFocus, focusMode, onExport, onDuplicate }) {
   return (
     <div className="navigation">
       <button className="nav-btn" onClick={onPrev} disabled={currentSlide === 0}>
@@ -25,6 +24,18 @@ export default function Navigation({ currentSlide, slidesLength, onPrev, onNext,
       {typeof onToggleFocus === 'function' && (
         <button className="reload-btn" onClick={onToggleFocus} aria-label={focusMode ? 'Sair do modo de foco' : 'Ativar modo de foco'}>
           {focusMode ? <Eye size={16} /> : <EyeOff size={16} />} {focusMode ? 'Sair foco' : 'Foco'}
+        </button>
+      )}
+
+      {typeof onExport === 'function' && (
+        <button className="reload-btn" onClick={onExport} aria-label="Exportar todos os slides como .md">
+          <Download size={16} /> Exportar .md
+        </button>
+      )}
+
+      {typeof onDuplicate === 'function' && (
+        <button className="reload-btn" onClick={onDuplicate} aria-label="Duplicar slide atual (Ctrl+D)">
+          <Copy size={16} /> Duplicar
         </button>
       )}
 

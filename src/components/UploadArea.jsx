@@ -3,7 +3,7 @@ import { Upload } from 'lucide-react';
 
 export default function UploadArea({ onFilesChange, loading }) {
   const [splitSingle, setSplitSingle] = useState(false);
-  const [delimiter, setDelimiter] = useState('---');
+  const [delimiter, setDelimiter] = useState('----\'----');
   const [localError, setLocalError] = useState('');
 
   const handleChange = (e) => {
@@ -26,7 +26,7 @@ export default function UploadArea({ onFilesChange, loading }) {
 
   return (
     <div className="upload-screen">
-      <h1>Aprensetação de slides</h1>
+      <h1>Apresentação de Slides</h1>
       <p>Envie os arquivos .md que representam os slides (serão ordenados por nome).</p>
 
       <label className="upload-area">
@@ -38,19 +38,25 @@ export default function UploadArea({ onFilesChange, loading }) {
         <button type="button" className="upload-btn" onClick={openFilePicker}>Escolher arquivos</button>
       </label>
 
-      <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center' }}>
-        <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div className="upload-options">
+        <label className="upload-checkbox">
           <input type="checkbox" checked={splitSingle} onChange={(e) => setSplitSingle(e.target.checked)} />
-          <span style={{ fontSize: 14 }}>Dividir arquivo único em slides</span>
+          <span>Dividir arquivo único em slides</span>
         </label>
 
-        <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 14 }}>Marcador:</span>
-          <input value={delimiter} onChange={(e) => setDelimiter(e.target.value)} style={{ padding: '6px 8px', borderRadius: 6 }} />
+        <label className="upload-delimiter">
+          <span>Marcador:</span>
+          <input 
+            type="text" 
+            value={delimiter} 
+            onChange={(e) => setDelimiter(e.target.value)} 
+            placeholder="----'----"
+            aria-label="Marcador de separação de slides"
+          />
         </label>
       </div>
       {localError && (
-        <div role="status" aria-live="polite" style={{ marginTop: 10, color: '#c62828', background: '#fff1f2', padding: 8, borderRadius: 6 }}>{localError}</div>
+        <div role="status" aria-live="polite" className="upload-error">{localError}</div>
       )}
     </div>
   );

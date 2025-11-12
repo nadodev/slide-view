@@ -57,6 +57,10 @@ const Presentation = () => {
   const [draftContent, setDraftContent] = useState('');
   const [focusMode, setFocusMode] = useState(false);
   const [editorFocus, setEditorFocus] = useState(false); // full-screen edit panel
+  const [showHelp, setShowHelp] = useState(false);
+  const [slideTransition, setSlideTransition] = useState('fade'); // 'fade', 'slide', 'none'
+  const thumbsRailRef = useRef(null);
+  const [transitionKey, setTransitionKey] = useState(0);
 
   // Disable page scroll while in focus mode
   useEffect(() => {
@@ -188,6 +192,10 @@ const Presentation = () => {
       const tag = target?.tagName?.toLowerCase();
       if (editing || tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
       const k = e.key.toLowerCase();
+      if (e.key === '?' || (e.shiftKey && k === '/')) { // Help shortcut
+        setShowHelp((v) => !v);
+        return;
+      }
       if (k === 'h') { // Toggle focus mode
         if (!presenterMode) setFocusMode((v) => !v);
         return;
@@ -199,12 +207,29 @@ const Presentation = () => {
           return;
         }
       }
+      if ((e.ctrlKey || e.metaKey) && k === 'd') { // Duplicate slide
+        e.preventDefault();
+        if (!presenterMode && slides.length > 0) {
+          duplicateSlide();
+          return;
+        }
+      }
       if (k === 'f') { toggleFullscreen(); }
       if (k === 'p') { setPresenterMode((v) => !v); }
-      if (e.key === 'ArrowRight' || e.key === ' ') { if (currentSlide < slides.length - 1) setCurrentSlide(currentSlide + 1); }
-      if (e.key === 'ArrowLeft') { if (currentSlide > 0) setCurrentSlide(currentSlide - 1); }
-      if (e.key === 'Home') setCurrentSlide(0);
-      if (e.key === 'End') setCurrentSlide(slides.length - 1);
+      if (e.key === 'ArrowRight' || e.key === ' ') { 
+        if (currentSlide < slides.length - 1) {
+          setCurrentSlide(currentSlide + 1); 
+          setTransitionKey(prev => prev + 1);
+        }
+      }
+      if (e.key === 'ArrowLeft') { 
+        if (currentSlide > 0) {
+          setCurrentSlide(currentSlide - 1); 
+          setTransitionKey(prev => prev + 1);
+        }
+      }
+      if (e.key === 'Home') { setCurrentSlide(0); setTransitionKey(prev => prev + 1); }
+      if (e.key === 'End') { setCurrentSlide(slides.length - 1); setTransitionKey(prev => prev + 1); }
     };
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
@@ -217,6 +242,16 @@ const Presentation = () => {
   }, [currentSlide, slides]);
 
   useEffect(() => { if (slideContainerRef.current && slides.length > 0) slideContainerRef.current.scrollTo({ top:0, behavior:'smooth' }); }, [currentSlide, slides.length]);
+
+  // Auto-scroll thumbnail rail to keep current slide visible
+  useEffect(() => {
+    if (thumbsRailRef.current && slides.length > 0) {
+      const activeThumb = thumbsRailRef.current.querySelector('.thumb-item.active');
+      if (activeThumb) {
+        activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [currentSlide, slides.length]);
 
   useEffect(() => {
     try {
@@ -255,6 +290,37 @@ const Presentation = () => {
     } catch (err) {
       // ignore
     }
+  };
+
+  // Export all slides as a single combined markdown file
+  const exportCombinedMarkdown = () => {
+    const delimiter = '---'; // You can make this configurable
+    const combined = slides.map((s) => s.content).join(`\n\n${delimiter}\n\n`);
+    const blob = new Blob([combined], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'apresentacao-combinada.md';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  // Duplicate current slide
+  const duplicateSlide = () => {
+    if (slides.length === 0) return;
+    const current = slides[currentSlide];
+    const duplicate = {
+      name: `${current.name}-copia`,
+      content: current.content,
+      notes: current.notes ? [...current.notes] : [],
+      html: current.html
+    };
+    const newSlides = [...slides];
+    newSlides.splice(currentSlide + 1, 0, duplicate);
+    setSlides(newSlides);
+    setCurrentSlide(currentSlide + 1);
   };
 
   return (
@@ -311,7 +377,7 @@ const Presentation = () => {
                 <>
                   <div className="presentation-with-thumbs">
                     {!focusMode && !presenterMode && (
-                      <aside className="thumbs-rail" aria-label="Lista de miniaturas">
+                      <aside className="thumbs-rail" ref={thumbsRailRef} aria-label="Lista de miniaturas">
                         <ul>
                           {slides.map((s, idx) => {
                             const active = idx === currentSlide;
@@ -321,7 +387,10 @@ const Presentation = () => {
                                 <button
                                   type="button"
                                   className={`thumb-item${active ? ' active' : ''}`}
-                                  onClick={() => setCurrentSlide(idx)}
+                                  onClick={() => { 
+                                    setCurrentSlide(idx); 
+                                    setTransitionKey(prev => prev + 1);
+                                  }}
                                   aria-label={`Ir para slide ${idx+1}`}
                                 >
                                   <span className="thumb-number">{idx+1}</span>
@@ -334,18 +403,28 @@ const Presentation = () => {
                       </aside>
                     )}
                     <div className="presentation-main">
-                      <SlideViewer html={slides[currentSlide].html} slideContainerRef={slideContainerRef} slideContentRef={slideContentRef} />
+                      <div key={transitionKey} className={`slide-transition slide-transition-${slideTransition}`}>
+                        <SlideViewer html={slides[currentSlide].html} slideContainerRef={slideContainerRef} slideContentRef={slideContentRef} />
+                      </div>
                     </div>
                   </div>
 
                   <Navigation
                     currentSlide={currentSlide}
                     slidesLength={slides.length}
-                    onPrev={() => setCurrentSlide((s) => Math.max(0, s - 1))}
-                    onNext={() => setCurrentSlide((s) => Math.min(slides.length - 1, s + 1))}
+                    onPrev={() => { 
+                      setCurrentSlide((s) => Math.max(0, s - 1)); 
+                      setTransitionKey(prev => prev + 1);
+                    }}
+                    onNext={() => { 
+                      setCurrentSlide((s) => Math.min(slides.length - 1, s + 1)); 
+                      setTransitionKey(prev => prev + 1);
+                    }}
                         onEdit={() => { setDraftContent(slides[currentSlide].content || ''); setEditing(true); }}
                         onToggleFocus={() => setFocusMode((v) => !v)}
                         focusMode={focusMode}
+                        onExport={exportCombinedMarkdown}
+                        onDuplicate={duplicateSlide}
                         onReset={() => { setSlides([]); setCurrentSlide(0); setError(''); setShowSlideList(false); setPresenterMode(false); }}
                   />
                 </>
@@ -378,6 +457,60 @@ const Presentation = () => {
           />
       {focusMode && (
         <div className="focus-indicator" aria-live="polite">Focus Mode ON (H para sair)</div>
+      )}
+      {showHelp && (
+        <div className="help-overlay" onClick={() => setShowHelp(false)}>
+          <div className="help-panel" onClick={(e) => e.stopPropagation()}>
+            <h2>Atalhos de Teclado</h2>
+            <div className="help-grid">
+              <div className="help-item">
+                <kbd>→</kbd> <kbd>Space</kbd>
+                <span>Próximo slide</span>
+              </div>
+              <div className="help-item">
+                <kbd>←</kbd>
+                <span>Slide anterior</span>
+              </div>
+              <div className="help-item">
+                <kbd>Home</kbd>
+                <span>Primeiro slide</span>
+              </div>
+              <div className="help-item">
+                <kbd>End</kbd>
+                <span>Último slide</span>
+              </div>
+              <div className="help-item">
+                <kbd>E</kbd>
+                <span>Editar slide atual</span>
+              </div>
+              <div className="help-item">
+                <kbd>Ctrl</kbd>+<kbd>D</kbd>
+                <span>Duplicar slide</span>
+              </div>
+              <div className="help-item">
+                <kbd>H</kbd>
+                <span>Modo foco (sem chrome)</span>
+              </div>
+              <div className="help-item">
+                <kbd>P</kbd>
+                <span>Modo apresentador</span>
+              </div>
+              <div className="help-item">
+                <kbd>F</kbd>
+                <span>Tela cheia</span>
+              </div>
+              <div className="help-item">
+                <kbd>?</kbd>
+                <span>Mostrar/ocultar ajuda</span>
+              </div>
+              <div className="help-item">
+                <kbd>Esc</kbd>
+                <span>Fechar painéis</span>
+              </div>
+            </div>
+            <button className="help-close" onClick={() => setShowHelp(false)}>Fechar (Esc ou clique fora)</button>
+          </div>
+        </div>
       )}
     </div>
   );

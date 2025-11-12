@@ -83,8 +83,10 @@ export default function SlideList({ slides, onReorder, onStart, onRemove, highCo
             </div>
             <div className="thumb-actions">
               <div style={{ display: 'flex', gap: 6 }}>
+               <div style={{ display: 'flex', gap: 6 }}>
                 <button className="nav-btn" onClick={() => move(idx, Math.max(0, idx - 1))} aria-label={`Mover slide ${idx + 1} para esquerda`}>&larr;</button>
                 <button className="nav-btn" onClick={() => move(idx, Math.min(slides.length - 1, idx + 1))} aria-label={`Mover slide ${idx + 1} para direita`}>&rarr;</button>
+               </div>
                 <button className="reload-btn" onClick={() => onRemove(idx)} aria-label={`Remover slide ${idx + 1}`}>Remover</button>
               </div>
             </div>
