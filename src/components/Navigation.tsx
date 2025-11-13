@@ -45,26 +45,26 @@ export default function Navigation({ currentSlide, slidesLength, onPrev, onNext,
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           {typeof onEdit === 'function' && (
-            <button className="bg-white border px-3 py-1 rounded-md flex items-center gap-2 text-sm hover:shadow-sm" onClick={onEdit} aria-label="Editar slide atual" title="Editar">
-              <Pencil size={16} /> <span>Editar</span>
+            <button className="nav-btn" onClick={onEdit} aria-label="Editar slide atual" title="Editar" style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Pencil size={14} /> <span style={{ fontSize: 13 }}>Editar</span>
             </button>
           )}
 
           {typeof onToggleFocus === 'function' && (
-            <button className="bg-white border px-3 py-1 rounded-md flex items-center gap-2 text-sm hover:shadow-sm" onClick={onToggleFocus} aria-label={focusMode ? 'Sair do modo de foco' : 'Ativar modo de foco'} title="Foco">
-              {focusMode ? <Eye size={16} /> : <EyeOff size={16} />} <span>{focusMode ? 'Sair foco' : 'Foco'}</span>
+            <button className="nav-btn" onClick={onToggleFocus} aria-label={focusMode ? 'Sair do modo de foco' : 'Ativar modo de foco'} title="Foco" style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              {focusMode ? <Eye size={14} /> : <EyeOff size={14} />} <span style={{ fontSize: 13 }}>{focusMode ? 'Sair foco' : 'Foco'}</span>
             </button>
           )}
 
           {typeof onExport === 'function' && (
-            <button className="bg-white border px-3 py-1 rounded-md flex items-center gap-2 text-sm hover:shadow-sm" onClick={onExport} aria-label="Exportar todos os slides como .md" title="Exportar .md">
-              <Download size={16} /> <span>Exportar</span>
+            <button className="nav-btn" onClick={onExport} aria-label="Exportar todos os slides como .md" title="Exportar .md" style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Download size={14} /> <span style={{ fontSize: 13 }}>Exportar</span>
             </button>
           )}
 
           {typeof onDuplicate === 'function' && (
-            <button className="bg-white border px-3 py-1 rounded-md flex items-center gap-2 text-sm hover:shadow-sm" onClick={onDuplicate} aria-label="Duplicar slide atual (Ctrl+D)" title="Duplicar">
-              <Copy size={16} /> <span>Duplicar</span>
+            <button className="nav-btn" onClick={onDuplicate} aria-label="Duplicar slide atual (Ctrl+D)" title="Duplicar" style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Copy size={14} /> <span style={{ fontSize: 13 }}>Duplicar</span>
             </button>
           )}
 
