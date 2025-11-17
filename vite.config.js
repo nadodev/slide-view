@@ -14,13 +14,43 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
-          ui: ['lucide-react', '@radix-ui/react-alert-dialog', '@radix-ui/react-progress'],
-          socket: ['socket.io-client']
+        manualChunks: (id) => {
+          // Vendor chunks
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('react-router')) {
+              return 'vendor-router';
+            }
+            if (id.includes('socket.io')) {
+              return 'vendor-socket';
+            }
+            if (id.includes('mermaid')) {
+              return 'vendor-mermaid';
+            }
+            if (id.includes('marked') || id.includes('highlight.js')) {
+              return 'vendor-markdown';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'vendor-radix';
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
+            // Outras dependências grandes
+            if (id.includes('tailwindcss') || id.includes('postcss')) {
+              return 'vendor-styles';
+            }
+            // Chunk geral para outras dependências
+            return 'vendor';
+          }
         }
       }
-    }
+    },
+    // Otimizações de memória
+    minify: 'esbuild',
+    target: 'esnext',
+    cssCodeSplit: true
   }
 })
