@@ -13,6 +13,15 @@ marked.setOptions({
 const renderer = new marked.Renderer();
 renderer.code = function(code: {text: string, lang?: string, escaped?: boolean}) {
   const { text, lang } = code;
+  
+  // Suporte para Mermaid
+  if (lang === 'mermaid') {
+    const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+    // Preservar o texto exatamente como está, incluindo quebras de linha
+    const escapedText = text.trim();
+    return `<div class="mermaid-container"><div class="mermaid" id="${id}">${escapedText}</div></div>`;
+  }
+  
   if (lang && hljs.getLanguage(lang)) {
     try {
       const highlighted = hljs.highlight(text, { language: lang }).value;

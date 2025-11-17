@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import InteractiveSplitModal from "./InteractiveSplitModal";
-import { Upload, FileText, Settings, Sparkles, Bot, Wand2, Zap } from "lucide-react";
+import { Upload, FileText, Settings, Sparkles, Bot, Wand2, Zap, Plus } from "lucide-react";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
 import { Carregando } from "./ui/Carregando";
@@ -12,12 +12,14 @@ type UploadAreaProps = {
     options?: any,
   ) => void;
   onAIGenerate?: (prompt: string, slideCount: number, baseText?: string) => void;
+  onCreateSlide?: () => void;
   loading?: boolean;
 };
 
 export default function UploadArea({
   onFilesChange,
   onAIGenerate,
+  onCreateSlide,
   loading,
 }: UploadAreaProps) {
   const [splitSingle, setSplitSingle] = useState<boolean>(false);
@@ -147,6 +149,7 @@ export default function UploadArea({
     }
   };
 
+
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 md:p-6">
       <div className="w-full max-w-5xl">
@@ -200,6 +203,15 @@ export default function UploadArea({
               <Zap size={20} className="relative z-10" />
               <span className="relative z-10">IA Generativa</span>
             </button>
+            {onCreateSlide && (
+              <button
+                onClick={onCreateSlide}
+                className="relative px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              >
+                <Plus size={20} />
+                <span>Criar Slide</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -567,6 +579,137 @@ export default function UploadArea({
           }}
         />
       )}
+
+      <style>{`
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(100, 116, 139, 0.4);
+          border-radius: 10px;
+          border: 2px solid transparent;
+          background-clip: padding-box;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(100, 116, 139, 0.6);
+        }
+
+        .markdown-preview {
+          color: #e2e8f0;
+          line-height: 1.75;
+        }
+
+        .markdown-preview h1,
+        .markdown-preview h2,
+        .markdown-preview h3,
+        .markdown-preview h4,
+        .markdown-preview h5,
+        .markdown-preview h6 {
+          font-weight: 700;
+          color: #ffffff;
+          margin-top: 1.5em;
+          margin-bottom: 0.75em;
+          line-height: 1.25;
+        }
+
+        .markdown-preview h1 {
+          font-size: 2.5rem;
+          background: linear-gradient(to right, #60a5fa, #a78bfa);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          padding-bottom: 0.5em;
+          border-bottom: 2px solid rgba(100, 116, 139, 0.3);
+        }
+
+        .markdown-preview h2 {
+          font-size: 2rem;
+          color: #f1f5f9;
+          padding-bottom: 0.3em;
+          border-bottom: 1px solid rgba(100, 116, 139, 0.3);
+        }
+
+        .markdown-preview h3 {
+          font-size: 1.5rem;
+          color: #e2e8f0;
+        }
+
+        .markdown-preview p {
+          margin-top: 1em;
+          margin-bottom: 1em;
+          color: #cbd5e1;
+        }
+
+        .markdown-preview ul,
+        .markdown-preview ol {
+          margin-top: 1em;
+          margin-bottom: 1em;
+          padding-left: 1.5em;
+          color: #cbd5e1;
+        }
+
+        .markdown-preview li {
+          margin-top: 0.5em;
+          margin-bottom: 0.5em;
+        }
+
+        .markdown-preview code {
+          background: #1e293b;
+          color: #c084fc;
+          padding: 0.2em 0.4em;
+          border-radius: 0.25rem;
+          font-family: 'Fira Code', 'Courier New', monospace;
+          font-size: 0.875em;
+          border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+
+        .markdown-preview pre {
+          background: #0f172a;
+          border: 1px solid rgba(100, 116, 139, 0.3);
+          border-radius: 0.75rem;
+          padding: 1.5rem;
+          overflow-x: auto;
+          margin: 1.5em 0;
+        }
+
+        .markdown-preview pre code {
+          background: transparent;
+          padding: 0;
+          border: none;
+          color: #e2e8f0;
+        }
+
+        .markdown-preview strong {
+          font-weight: 700;
+          color: #ffffff;
+        }
+
+        .markdown-preview em {
+          font-style: italic;
+          color: #e2e8f0;
+        }
+
+        .markdown-preview a {
+          color: #60a5fa;
+          text-decoration: none;
+        }
+
+        .markdown-preview a:hover {
+          color: #93c5fd;
+          text-decoration: underline;
+        }
+      `}</style>
     </div>
   );
 }

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
+import { useMermaid } from '../hooks/useMermaid';
 
 export const RemoteControl: React.FC = () => {
   console.log('RemoteControl component renderizado');
@@ -31,6 +32,9 @@ export const RemoteControl: React.FC = () => {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [presentationContent, setPresentationContent] = useState<string>('');
   const [scrollPosition, setScrollPosition] = useState(0);
+  
+  // Inicializar Mermaid para o conteúdo da apresentação
+  useMermaid(presentationContent);
   const [isPresenterMode, setIsPresenterMode] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const mirrorRef = useRef<HTMLDivElement>(null);

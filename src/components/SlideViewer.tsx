@@ -1,4 +1,5 @@
 import type { RefObject } from "react";
+import { useMermaid } from "../hooks/useMermaid";
 
 type SlideViewerProps = {
   html?: string;
@@ -11,6 +12,8 @@ export default function SlideViewer({
   slideContainerRef,
   slideContentRef,
 }: SlideViewerProps) {
+  useMermaid(html);
+
   return (
     <div
       ref={slideContainerRef as any}
@@ -294,6 +297,27 @@ export default function SlideViewer({
         /* Espaçamento entre elementos adjacentes */
         .custom-scroll > *:last-child {
           margin-bottom: 0;
+        }
+
+        /* Estilos para Mermaid */
+        .custom-scroll .mermaid-container {
+          margin: 2rem 0;
+          padding: 1.5rem;
+          background-color: #1e293b;
+          border-radius: 0.75rem;
+          border: 1px solid #334155;
+          overflow-x: auto;
+        }
+
+        .custom-scroll .mermaid {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+
+        .custom-scroll .mermaid svg {
+          max-width: 100%;
+          height: auto;
         }
       `}</style>
     </div>

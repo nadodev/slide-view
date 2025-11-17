@@ -18,6 +18,20 @@ import { QRCodeDisplay } from "./QRCodeDisplay";
 import { RemoteControlModal } from "./RemoteControlModal";
 import { toast } from "sonner";
 
+// Função helper para extrair notas (mesma lógica do useSlidesManager)
+function extractNotes(text: string) {
+  const notes: string[] = [];
+  if (!text) return { clean: "", notes };
+  const cleaned = text.replace(
+    /<!--\s*note:\s*([\s\S]*?)-->/gi,
+    (_match, note) => {
+      if (note && note.trim()) notes.push(note.trim());
+      return "";
+    },
+  );
+  return { clean: cleaned.trim(), notes };
+}
+
 const Presentation = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -380,9 +394,14 @@ const Presentation = () => {
         <PresentationEmptyState
           highContrast={highContrast}
           onToggleHighContrast={() => setHighContrast((v) => !v)}
-            onFilesChange={handleFileUpload} 
-            onAIGenerate={handleAIGeneration}
-            loading={loading} 
+          onFilesChange={handleFileUpload} 
+          onAIGenerate={handleAIGeneration}
+          onCreateSlide={() => {
+            // Abrir o editor no modo de criação
+            setDraftContent("");
+            setEditing(true);
+          }}
+          loading={loading} 
           error={error}
           warning={warning}
         />
@@ -474,19 +493,42 @@ const Presentation = () => {
         open={editing}
         value={draftContent}
         onChange={setDraftContent}
-        onCancel={() => setEditing(false)}
-        onSave={() => {
-          setSlides((prev) => {
-            const copy = prev.slice();
-            const item = copy[currentSlide];
-            if (item) {
-              item.content = draftContent;
-              item.html = parseMarkdownSafe(draftContent);
-            }
-            return copy;
-          });
+        onCancel={() => {
           setEditing(false);
-          saveSlideToFile(currentSlide, draftContent);
+          // Resetar para modo edit quando fechar
+          setDraftContent("");
+        }}
+        onSave={() => {
+          if (slides.length > 0 && currentSlide < slides.length) {
+            setSlides((prev) => {
+              const copy = prev.slice();
+              const item = copy[currentSlide];
+              if (item) {
+                item.content = draftContent;
+                item.html = parseMarkdownSafe(draftContent);
+              }
+              return copy;
+            });
+            setEditing(false);
+            saveSlideToFile(currentSlide, draftContent);
+          }
+        }}
+        mode={slides.length === 0 ? 'create' : 'edit'}
+        onCreateFiles={(files) => {
+          // Processar arquivos .md como slides
+          const newSlides = files.map((file) => {
+            const { clean, notes } = extractNotes(file.content);
+            return {
+              name: file.name.replace('.md', ''),
+              content: clean,
+              notes,
+              html: parseMarkdownSafe(clean),
+            };
+          });
+          setSlides(newSlides);
+          setCurrentSlide(0);
+          setShowSlideList(true);
+          setEditing(false);
         }}
         editorFocus={editorFocus}
         onToggleEditorFocus={() => setEditorFocus((v) => !v)}

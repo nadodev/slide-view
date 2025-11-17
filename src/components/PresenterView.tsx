@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import hljs from "highlight.js";
 import "highlight.js/styles/atom-one-dark.min.css";
+import { useMermaid } from "../hooks/useMermaid";
 
 type PresenterViewProps = {
   currentHtml?: string;
@@ -21,6 +22,7 @@ export default function PresenterView({
   onExit,
   scrollContainerRef,
 }: PresenterViewProps) {
+  useMermaid(currentHtml);
   const [clockNow, setClockNow] = useState(() => new Date());
   const internalScrollRef = useRef<HTMLDivElement>(null);
   

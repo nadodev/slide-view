@@ -11,6 +11,7 @@ type PresentationEmptyStateProps = {
     options?: any,
   ) => void;
   onAIGenerate?: (prompt: string, slideCount: number, baseText?: string) => void;
+  onCreateSlide?: () => void;
   loading: boolean;
   error: string;
   warning: string;
@@ -21,6 +22,7 @@ export default function PresentationEmptyState({
   onToggleHighContrast,
   onFilesChange,
   onAIGenerate,
+  onCreateSlide,
   loading,
   error,
   warning,
@@ -41,6 +43,7 @@ export default function PresentationEmptyState({
       <UploadArea
         onFilesChange={onFilesChange}
         onAIGenerate={onAIGenerate}
+        onCreateSlide={onCreateSlide}
         loading={loading}
       />
 
