@@ -15,6 +15,7 @@ import PresentationEmptyState from "./presentation/PresentationEmptyState";
 import SlidesWorkspace from "./presentation/SlidesWorkspace";
 import { useSocket } from "../hooks/useSocket";
 import { QRCodeDisplay } from "./QRCodeDisplay";
+import { RemoteControlModal } from "./RemoteControlModal";
 
 const Presentation = () => {
   const location = useLocation();
@@ -78,6 +79,8 @@ const Presentation = () => {
     updateSlide,
     disconnect,
     onRemoteCommand,
+    isSupported,
+    platform,
   } = useSocket();
 
   // Setup remote control command handling
@@ -278,6 +281,14 @@ const Presentation = () => {
               setHighContrast={setHighContrast}
               loading={loading}
               onShowRemoteControl={() => {
+                console.log('QR Code clicado - Platform:', platform, 'Supported:', isSupported);
+                
+                if (!isSupported) {
+                  // Em plataformas não suportadas, apenas mostrar aviso
+                  setShowQRCode(true);
+                  return;
+                }
+                
                 if (!session) {
                   createPresentation();
                 }
@@ -403,15 +414,29 @@ const Presentation = () => {
         </div>
       )}
 
-      {/* QR Code Modal */}
-      {showQRCode && session && (
-        <QRCodeDisplay
-          qrUrl={session.qrUrl}
-          sessionId={session.sessionId}
-          remoteClients={session.remoteClients}
-          isConnected={session.isConnected}
-          onClose={() => setShowQRCode(false)}
-        />
+      {/* QR Code / Remote Control Modal */}
+      {showQRCode && (
+        <>
+          {isSupported && session ? (
+            <QRCodeDisplay
+              qrUrl={session.qrUrl}
+              sessionId={session.sessionId}
+              remoteClients={session.remoteClients}
+              isConnected={session.isConnected}
+              onClose={() => setShowQRCode(false)}
+            />
+          ) : (
+            <RemoteControlModal
+              qrUrl={session?.qrUrl}
+              sessionId={session?.sessionId}
+              remoteClients={session?.remoteClients}
+              isConnected={session?.isConnected}
+              isSupported={isSupported}
+              platform={platform}
+              onClose={() => setShowQRCode(false)}
+            />
+          )}
+        </>
       )}
     </div>
   );

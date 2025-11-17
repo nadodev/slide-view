@@ -179,7 +179,10 @@ const Navigation = ({
             {/* Botão Controle Remoto */}
             {onShowRemoteControl && (
               <button
-                onClick={onShowRemoteControl}
+                onClick={() => {
+                  console.log('Botão QR Code clicado no Navigation');
+                  onShowRemoteControl();
+                }}
                 aria-label="Ativar controle remoto"
                 title="Controlar apresentação pelo celular"
                 className={`cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm border ${
