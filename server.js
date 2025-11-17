@@ -8,7 +8,23 @@ import dotenv from 'dotenv';
 import os from 'os';
 
 // Carregar variáveis de ambiente
-dotenv.config();
+// Detectar se está no Railway ou outro ambiente
+const isRailway = process.env.RAILWAY_ENVIRONMENT;
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+if (isRailway) {
+  dotenv.config({ path: '.env.railway' });
+} else if (isDevelopment) {
+  dotenv.config({ path: '.env' });
+} else {
+  dotenv.config({ path: '.env.production' });
+}
+
+console.log('Environment:', { 
+  NODE_ENV: process.env.NODE_ENV,
+  RAILWAY: isRailway ? 'YES' : 'NO',
+  PORT: process.env.PORT 
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -222,8 +238,9 @@ const getLocalIP = () => {
   return 'localhost';
 };
 
-// Não iniciar servidor em ambientes serverless (Vercel)
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+// Iniciar servidor (não em ambientes serverless como Vercel)
+const isServerless = process.env.VERCEL || process.env.NETLIFY;
+if (!isServerless) {
   server.listen(PORT, HOST, () => {
     const localIP = getLocalIP();
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
@@ -235,6 +252,8 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     }
     console.log(`📲 Controles remotos: /remote/{sessionId}`);
   });
+} else {
+  console.log('🚫 Ambiente serverless detectado - servidor não inicializado');
 }
 
 // Exportar para Vercel

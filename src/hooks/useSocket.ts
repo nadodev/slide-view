@@ -88,7 +88,11 @@ export const useSocket = (): UseSocketReturn => {
 
       socketRef.current.on('connect_error', (err) => {
         console.error('❌ Erro de conexão:', err);
-        setError('Erro ao conectar com o servidor');
+        if (platform === 'development') {
+          setError('Servidor não está rodando. Execute: npm run dev:full');
+        } else {
+          setError('Erro ao conectar com o servidor');
+        }
         setIsConnecting(false);
       });
 
@@ -119,6 +123,23 @@ export const useSocket = (): UseSocketReturn => {
     if (!isSupported) {
       setError(`Controle remoto não disponível em ${platform}. Use Railway, Render ou Heroku.`);
       return;
+    }
+
+    // No desenvolvimento, verificar se servidor está rodando
+    if (platform === 'development') {
+      const checkServer = async () => {
+        try {
+          const response = await fetch('http://localhost:3001/api/health');
+          if (!response.ok) {
+            throw new Error('Servidor não respondeu');
+          }
+        } catch (error) {
+          setError('Servidor Socket.IO não está rodando. Execute: npm run dev:full');
+          setIsConnecting(false);
+          return;
+        }
+      };
+      checkServer();
     }
 
     if (!socketRef.current) {
