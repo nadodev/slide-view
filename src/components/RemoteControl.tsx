@@ -31,6 +31,8 @@ export const RemoteControl: React.FC = () => {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [presentationContent, setPresentationContent] = useState<string>('');
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [isPresenterMode, setIsPresenterMode] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
   const mirrorRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isScrollingRef = useRef(false);
@@ -317,6 +319,31 @@ export const RemoteControl: React.FC = () => {
       return;
     }
 
+    // Toggle para presenter e focus
+    if (command === 'presenter') {
+      const newState = !isPresenterMode;
+      setIsPresenterMode(newState);
+      socket.emit('remote-command', {
+        sessionId,
+        command: 'presenter',
+        toggle: newState,
+      });
+      toast.success(newState ? 'Modo apresentação ativado' : 'Modo apresentação desativado');
+      return;
+    }
+
+    if (command === 'focus') {
+      const newState = !isFocusMode;
+      setIsFocusMode(newState);
+      socket.emit('remote-command', {
+        sessionId,
+        command: 'focus',
+        toggle: newState,
+      });
+      toast.success(newState ? 'Modo foco ativado' : 'Modo foco desativado');
+      return;
+    }
+
     socket.emit('remote-command', {
       sessionId,
       command,
@@ -330,11 +357,11 @@ export const RemoteControl: React.FC = () => {
       previous: 'Slide anterior',
       goto: `Indo para slide ${(slideIndex || 0) + 1}`,
       scroll: scrollDirection === 'up' ? 'Rolando para cima' : 'Rolando para baixo',
-      presenter: 'Modo apresentação ativado',
-      focus: 'Modo foco ativado'
     };
 
-    toast.success(commandMessages[command]);
+    if (commandMessages[command]) {
+      toast.success(commandMessages[command]);
+    }
   };
 
   if (isConnecting) {
@@ -783,10 +810,16 @@ export const RemoteControl: React.FC = () => {
                 }}
                 disabled={!isConnected}
                 size="lg"
-                className="h-14 bg-purple-800 hover:bg-purple-700 border border-purple-600 flex flex-col items-center gap-1"
+                className={`h-14 flex flex-col items-center gap-1 transition-all ${
+                  isPresenterMode
+                    ? 'bg-purple-600 hover:bg-purple-700 border-2 border-purple-400 shadow-lg shadow-purple-500/50'
+                    : 'bg-purple-800 hover:bg-purple-700 border border-purple-600'
+                }`}
               >
-                <Play size={20} />
-                <span className="text-xs">Apresentar (P)</span>
+                <Play size={20} className={isPresenterMode ? 'text-white' : 'text-purple-200'} />
+                <span className={`text-xs ${isPresenterMode ? 'text-white font-semibold' : 'text-purple-200'}`}>
+                  {isPresenterMode ? 'Apresentando (P)' : 'Apresentar (P)'}
+                </span>
               </Button>
 
               <Button
@@ -796,10 +829,16 @@ export const RemoteControl: React.FC = () => {
                 }}
                 disabled={!isConnected}
                 size="lg"
-                className="h-14 bg-amber-800 hover:bg-amber-700 border border-amber-600 flex flex-col items-center gap-1"
+                className={`h-14 flex flex-col items-center gap-1 transition-all ${
+                  isFocusMode
+                    ? 'bg-amber-600 hover:bg-amber-700 border-2 border-amber-400 shadow-lg shadow-amber-500/50'
+                    : 'bg-amber-800 hover:bg-amber-700 border border-amber-600'
+                }`}
               >
-                <QrCode size={20} />
-                <span className="text-xs">Foco (F)</span>
+                <QrCode size={20} className={isFocusMode ? 'text-white' : 'text-amber-200'} />
+                <span className={`text-xs ${isFocusMode ? 'text-white font-semibold' : 'text-amber-200'}`}>
+                  {isFocusMode ? 'Foco Ativo (F)' : 'Foco (F)'}
+                </span>
               </Button>
             </div>
           </div>

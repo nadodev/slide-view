@@ -43,6 +43,7 @@ const Presentation = () => {
   } = useSlidesManager();
   const slideContentRef = useRef<HTMLElement | null>(null);
   const slideContainerRef = useRef<HTMLElement | null>(null);
+  const presenterScrollRef = useRef<HTMLDivElement | null>(null);
   const [highContrast, setHighContrast] = useState(() => {
     try {
       return localStorage.getItem("presentation-high-contrast") === "1";
@@ -105,10 +106,17 @@ const Presentation = () => {
       } else if (command.command === 'scroll' && command.scrollDirection) {
         console.log('🖱️ Executando scroll:', command.scrollDirection);
         
-        // Fazer scroll no container do slide, não na janela
-        const scrollContainer = slideContentRef.current;
+        // Escolher o container correto baseado no modo
+        const scrollContainer = presenterMode 
+          ? presenterScrollRef.current 
+          : slideContentRef.current;
+        
         if (!scrollContainer) {
-          console.warn('⚠️ Container de scroll não encontrado');
+          console.warn('⚠️ Container de scroll não encontrado', { 
+            presenterMode, 
+            hasPresenterRef: !!presenterScrollRef.current,
+            hasSlideRef: !!slideContentRef.current 
+          });
           return;
         }
         
@@ -125,7 +133,8 @@ const Presentation = () => {
           newPosition,
           maxScroll,
           scrollHeight: scrollContainer.scrollHeight,
-          clientHeight: scrollContainer.clientHeight
+          clientHeight: scrollContainer.clientHeight,
+          mode: presenterMode ? 'presenter' : 'normal'
         });
         
         scrollContainer.scrollTo({
@@ -139,7 +148,12 @@ const Presentation = () => {
         }, 500);
       } else if (command.command === 'scroll-sync' && command.scrollPosition !== undefined) {
         console.log('Sincronizando scroll para posição:', command.scrollPosition);
-        const scrollContainer = slideContentRef.current;
+        
+        // Escolher o container correto baseado no modo
+        const scrollContainer = presenterMode 
+          ? presenterScrollRef.current 
+          : slideContentRef.current;
+        
         if (scrollContainer) {
           scrollContainer.scrollTo({
             top: command.scrollPosition,
@@ -147,22 +161,25 @@ const Presentation = () => {
           });
         } else {
           // Fallback para window se o container não estiver disponível
+          console.warn('⚠️ Usando fallback window.scrollTo');
           window.scrollTo({
             top: command.scrollPosition,
             behavior: 'smooth'
           });
         }
       } else if (command.command === 'presenter') {
-        console.log('Ativando modo apresentação');
-        setPresenterMode(true);
+        const shouldActivate = (command as any).toggle !== false; // Default true se não especificado
+        console.log('Toggle modo apresentação:', shouldActivate ? 'ativar' : 'desativar');
+        setPresenterMode(shouldActivate);
         toast.success('Modo Apresentação', {
-          description: 'Ativado via controle remoto'
+          description: shouldActivate ? 'Ativado via controle remoto' : 'Desativado via controle remoto'
         });
       } else if (command.command === 'focus') {
-        console.log('Ativando modo foco');
-        setFocusMode(true);
+        const shouldActivate = (command as any).toggle !== false; // Default true se não especificado
+        console.log('Toggle modo foco:', shouldActivate ? 'ativar' : 'desativar');
+        setFocusMode(shouldActivate);
         toast.success('Modo Foco', {
-          description: 'Ativado via controle remoto'
+          description: shouldActivate ? 'Ativado via controle remoto' : 'Desativado via controle remoto'
         });
       }
       
@@ -171,7 +188,7 @@ const Presentation = () => {
         setTransitionKey(prev => prev + 1);
       }
     });
-  }, [onRemoteCommand, slides.length, setCurrentSlide, setTransitionKey, slideContentRef]);
+  }, [onRemoteCommand, slides.length, setCurrentSlide, setTransitionKey, slideContentRef, presenterMode, presenterScrollRef]);
 
   // Update remote clients when slide changes
   useEffect(() => {
@@ -344,9 +361,9 @@ const Presentation = () => {
         <PresentationEmptyState
           highContrast={highContrast}
           onToggleHighContrast={() => setHighContrast((v) => !v)}
-          onFilesChange={handleFileUpload}
-          onAIGenerate={handleAIGeneration}
-          loading={loading}
+            onFilesChange={handleFileUpload} 
+            onAIGenerate={handleAIGeneration}
+            loading={loading} 
           error={error}
           warning={warning}
         />
@@ -380,33 +397,34 @@ const Presentation = () => {
               }
               onPrev={() => setCurrentSlide((s) => Math.max(0, s - 1))}
               onExit={() => setPresenterMode(false)}
+              scrollContainerRef={presenterScrollRef}
             />
-          ) : (
+              ) : (
             <SlidesWorkspace
-              slides={slides}
-              currentSlide={currentSlide}
+                      slides={slides}
+                      currentSlide={currentSlide}
               setCurrentSlide={setCurrentSlide}
-              transitionKey={transitionKey}
-              setTransitionKey={setTransitionKey}
-              slideTransition={slideTransition}
-              setSlideTransition={setSlideTransition}
-              focusMode={focusMode}
-              setFocusMode={setFocusMode}
-              presenterMode={presenterMode}
-              setPresenterMode={setPresenterMode}
+                      transitionKey={transitionKey}
+                      setTransitionKey={setTransitionKey}
+                      slideTransition={slideTransition}
+                      setSlideTransition={setSlideTransition}
+                      focusMode={focusMode}
+                      setFocusMode={setFocusMode}
+                      presenterMode={presenterMode}
+                      setPresenterMode={setPresenterMode}
               thumbsRailRef={thumbsRailRef}
               slideContainerRef={slideContainerRef}
               slideContentRef={slideContentRef}
               onRemove={(idx: number) => handleRemoveSlide(idx)}
               onReorder={reorderSlides}
-              setShowSlideList={setShowSlideList}
-              setEditing={setEditing}
+                      setShowSlideList={setShowSlideList}
+                      setEditing={setEditing}
               setDraftContent={setDraftContent}
-              duplicateSlide={duplicateSlide}
-              onSaveAllSlides={saveAllSlidesToFile}
-              onRestart={handleRestart}
-              highContrast={highContrast}
-              setHighContrast={setHighContrast}
+                      duplicateSlide={duplicateSlide}
+                      onSaveAllSlides={saveAllSlidesToFile}
+                      onRestart={handleRestart}
+                      highContrast={highContrast}
+                      setHighContrast={setHighContrast}
               loading={loading}
               onShowRemoteControl={() => {
                 console.log('QR Code clicado - Platform:', platform, 'Supported:', isSupported);

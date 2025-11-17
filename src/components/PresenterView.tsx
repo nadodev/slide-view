@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import hljs from "highlight.js";
 import "highlight.js/styles/atom-one-dark.min.css";
 
@@ -9,6 +9,7 @@ type PresenterViewProps = {
   onNext: () => void;
   onPrev: () => void;
   onExit: () => void;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 };
 
 export default function PresenterView({
@@ -18,8 +19,13 @@ export default function PresenterView({
   onNext,
   onPrev,
   onExit,
+  scrollContainerRef,
 }: PresenterViewProps) {
   const [clockNow, setClockNow] = useState(() => new Date());
+  const internalScrollRef = useRef<HTMLDivElement>(null);
+  
+  // Usar a ref externa se fornecida, senão usar a interna
+  const scrollRef = scrollContainerRef || internalScrollRef;
 
   useEffect(() => {
     const t = setInterval(() => setClockNow(new Date()), 1000);
@@ -38,17 +44,17 @@ export default function PresenterView({
   const progress = ((currentIndex + 1) / slidesLength) * 100;
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-black flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-linear-to-br from-gray-950 via-gray-900 to-black flex flex-col overflow-hidden">
       {/* Barra de Progresso Elegante */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/5 to-transparent">
+      <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-transparent via-white/5 to-transparent">
         <div
-          className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-700 ease-out shadow-lg shadow-purple-500/50"
+          className="h-full bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-700 ease-out shadow-lg shadow-purple-500/50"
           style={{ width: `${progress}%` }}
         />
       </div>
 
       {/* Info Bar Superior */}
-      <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-10 py-5 bg-gradient-to-b from-black/40 via-black/20 to-transparent backdrop-blur-sm">
+      <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-10 py-5 bg-linear-to-b from-black/40 via-black/20 to-transparent backdrop-blur-sm">
         <div className="flex items-center gap-8 text-white/60 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-lg shadow-green-400/50"></div>
@@ -80,7 +86,10 @@ export default function PresenterView({
 
       {/* Conteúdo Principal */}
       <div className="flex-1 px-20 py-24 flex items-start justify-center min-h-0">
-        <div className="w-full max-w-6xl h-full overflow-y-auto custom-scrollbar py-4">
+        <div 
+          ref={scrollRef}
+          className="w-full max-w-6xl h-full overflow-y-auto custom-scrollbar py-4"
+        >
           <div
             className="slide-content animate-fadeIn"
             dangerouslySetInnerHTML={{ __html: currentHtml }}
@@ -89,7 +98,7 @@ export default function PresenterView({
       </div>
 
       {/* Navegação Inferior Elegante */}
-      <div className="absolute bottom-0 left-0 right-0 z-50 flex items-center justify-center pb-10 bg-gradient-to-t from-black/40 via-black/20 to-transparent backdrop-blur-sm opacity-0 hover:opacity-100 transition-all duration-500">
+      <div className="absolute bottom-0 left-0 right-0 z-50 flex items-center justify-center pb-10 bg-linear-to-t from-black/40 via-black/20 to-transparent backdrop-blur-sm opacity-0 hover:opacity-100 transition-all duration-500">
         <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md rounded-full px-6 py-3 border border-white/10 shadow-2xl">
           <button
             onClick={onPrev}
