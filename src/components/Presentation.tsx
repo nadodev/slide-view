@@ -168,15 +168,27 @@ const Presentation = () => {
           });
         }
       } else if (command.command === 'presenter') {
-        const shouldActivate = (command as any).toggle !== false; // Default true se não especificado
-        console.log('Toggle modo apresentação:', shouldActivate ? 'ativar' : 'desativar');
+        // Verificar se o toggle foi especificado explicitamente
+        const toggleValue = (command as any).toggle;
+        const shouldActivate = toggleValue !== undefined ? toggleValue : !presenterMode;
+        console.log('Toggle modo apresentação:', { 
+          toggleValue, 
+          shouldActivate, 
+          currentState: presenterMode 
+        });
         setPresenterMode(shouldActivate);
         toast.success('Modo Apresentação', {
           description: shouldActivate ? 'Ativado via controle remoto' : 'Desativado via controle remoto'
         });
       } else if (command.command === 'focus') {
-        const shouldActivate = (command as any).toggle !== false; // Default true se não especificado
-        console.log('Toggle modo foco:', shouldActivate ? 'ativar' : 'desativar');
+        // Verificar se o toggle foi especificado explicitamente
+        const toggleValue = (command as any).toggle;
+        const shouldActivate = toggleValue !== undefined ? toggleValue : !focusMode;
+        console.log('Toggle modo foco:', { 
+          toggleValue, 
+          shouldActivate, 
+          currentState: focusMode 
+        });
         setFocusMode(shouldActivate);
         toast.success('Modo Foco', {
           description: shouldActivate ? 'Ativado via controle remoto' : 'Desativado via controle remoto'
