@@ -120,13 +120,29 @@ io.on('connection', (socket) => {
   });
 
   // Comandos de navegação do controle remoto
-  socket.on('remote-command', ({ sessionId, command, slideIndex, scrollDirection }) => {
-    console.log('Servidor - Comando recebido:', { sessionId, command, slideIndex, scrollDirection });
+  socket.on('remote-command', ({ sessionId, command, slideIndex, scrollDirection, scrollPosition }) => {
+    console.log('Servidor - Comando recebido:', { sessionId, command, slideIndex, scrollDirection, scrollPosition });
     
     const presentation = presentations.get(sessionId);
     
     if (!presentation || !presentation.remoteClients.includes(socket.id)) {
       console.log('Sessão não encontrada ou cliente não autorizado');
+      return;
+    }
+
+    // Processar comandos de scroll sincronizado
+    if (command === 'scroll-sync') {
+      // Enviar comando de scroll para o host
+      socket.to(presentation.hostSocket).emit('remote-command', {
+        command: 'scroll-sync',
+        scrollPosition,
+        fromClient: socket.id
+      });
+      
+      // Sincronizar com outros remotes
+      socket.to(`presentation-${sessionId}`).emit('scroll-sync', {
+        scrollPosition
+      });
       return;
     }
 

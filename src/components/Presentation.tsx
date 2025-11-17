@@ -105,10 +105,16 @@ const Presentation = () => {
           top: direction,
           behavior: 'smooth'
         });
+      } else if (command.command === 'scroll-sync' && command.scrollPosition !== undefined) {
+        console.log('Sincronizando scroll para posição:', command.scrollPosition);
+        window.scrollTo({
+          top: command.scrollPosition,
+          behavior: 'smooth'
+        });
       }
       
       // Update transition for smooth slide change (except for scroll)
-      if (command.command !== 'scroll') {
+      if (command.command !== 'scroll' && command.command !== 'scroll-sync') {
         setTransitionKey(prev => prev + 1);
       }
     });

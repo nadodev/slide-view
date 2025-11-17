@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import { 
@@ -28,6 +28,9 @@ export const RemoteControl: React.FC = () => {
   const [totalSlides, setTotalSlides] = useState(0);
   const [isConnecting, setIsConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [presentationContent, setPresentationContent] = useState<string>('');
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const mirrorRef = useRef<HTMLDivElement>(null);
 
   // Detectar se estamos na Vercel
   const isVercel = window.location.hostname.includes('vercel.app');
@@ -131,6 +134,16 @@ export const RemoteControl: React.FC = () => {
       setTotalSlides(newTotal);
     });
 
+    socketConnection.on('presentation-content', ({ content, scrollPosition: newScrollPos }) => {
+      console.log('Conteúdo da apresentação recebido');
+      setPresentationContent(content);
+      setScrollPosition(newScrollPos || 0);
+    });
+
+    socketConnection.on('scroll-sync', ({ scrollPosition: newScrollPos }) => {
+      setScrollPosition(newScrollPos);
+    });
+
     socketConnection.on('presentation-ended', () => {
       toast.info('Apresentação encerrada', {
         description: 'A apresentação foi finalizada'
@@ -143,6 +156,23 @@ export const RemoteControl: React.FC = () => {
       socketConnection.disconnect();
     };
   }, [sessionId]);
+
+  // Sincronizar scroll position do espelho
+  useEffect(() => {
+    if (mirrorRef.current && scrollPosition !== undefined) {
+      mirrorRef.current.scrollTop = scrollPosition;
+    }
+  }, [scrollPosition]);
+
+  const sendScrollSync = (scrollTop: number) => {
+    if (!socket || !isConnected) return;
+
+    socket.emit('remote-command', {
+      sessionId,
+      command: 'scroll-sync',
+      scrollPosition: scrollTop,
+    });
+  };
 
   const sendCommand = (command: 'next' | 'previous' | 'goto' | 'scroll', slideIndex?: number, scrollDirection?: 'up' | 'down') => {
     console.log('RemoteControl - Enviando comando:', { command, slideIndex, scrollDirection });
@@ -258,6 +288,36 @@ export const RemoteControl: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Espelho da Apresentação */}
+          <div className="bg-slate-800/50 rounded-xl p-3 mb-6">
+            <h3 className="text-slate-300 text-sm font-medium mb-3">📺 Espelho da Apresentação:</h3>
+            <div 
+              ref={mirrorRef}
+              className="bg-white rounded-lg h-48 overflow-y-auto border border-slate-600"
+              onScroll={(e) => {
+                const target = e.target as HTMLDivElement;
+                sendScrollSync(target.scrollTop);
+              }}
+            >
+              {presentationContent ? (
+                <div 
+                  className="p-4 text-black text-xs leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: presentationContent }}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+                  <div className="text-center">
+                    <Smartphone className="mx-auto mb-2" size={32} />
+                    <p>Carregando conteúdo...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <p className="text-slate-500 text-xs mt-2">
+              💡 Role aqui para controlar a apresentação
+            </p>
+          </div>
         </div>
 
         {/* Controls */}
