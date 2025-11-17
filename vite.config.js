@@ -21,37 +21,27 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Vendor chunks - estratégia otimizada
+          // Vendor chunks - estratégia simplificada para evitar problemas com React
           if (id.includes('node_modules')) {
-            // React e todas as dependências do React juntas (CRÍTICO)
-            // Isso garante que React esteja sempre disponível
-            if (id.includes('react') || id.includes('react-dom') || 
-                id.includes('react-router') || id.includes('@radix-ui') ||
-                id.includes('react-resizable-panels') || id.includes('sonner')) {
-              return 'vendor-react';
-            }
-            // Mermaid separado (muito grande e pode ser carregado dinamicamente)
+            // Mermaid separado (muito grande e carregado dinamicamente)
             if (id.includes('mermaid')) {
               return 'vendor-mermaid';
             }
-            // Socket.io
+            // Socket.io separado (não depende do React)
             if (id.includes('socket.io')) {
               return 'vendor-socket';
             }
-            // Markdown tools
+            // Markdown tools separados (não dependem do React)
             if (id.includes('marked') || id.includes('highlight.js')) {
               return 'vendor-markdown';
             }
-            // Icons (lucide pode ser grande)
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
-            }
-            // Estilos (Tailwind pode ser pesado)
+            // Estilos separados (não dependem do React)
             if (id.includes('tailwindcss') || id.includes('postcss') || id.includes('autoprefixer')) {
               return 'vendor-styles';
             }
-            // Resto em chunks menores
-            return 'vendor-other';
+            // TUDO que pode usar React vai para vendor-react
+            // Isso garante que React esteja sempre disponível
+            return 'vendor-react';
           }
         },
         // Limitar número de chunks para reduzir overhead
