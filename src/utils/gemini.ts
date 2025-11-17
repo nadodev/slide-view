@@ -6,17 +6,32 @@ export async function generateSlidesWithGemini(prompt: string, slideCount: numbe
     // Construir contexto baseado no texto preservado
     const textContext = baseText ? `
 
-TEXTO BASE PARA USAR COMO REFERÊNCIA E EXPANDIR:
+TEXTO BASE OBRIGATÓRIO PARA PRESERVAR E EXPANDIR:
 ${baseText}
 
-USE AS INFORMAÇÕES ACIMA como base e expanda com mais detalhes técnicos, exemplos práticos e explicações aprofundadas. Mantenha a estrutura e conceitos principais, mas adicione muito mais conteúdo.` : '';
+INSTRUÇÕES CRÍTICAS DE PRESERVAÇÃO:
+- MANTENHA TODOS os títulos, seções e conceitos do texto base
+- PRESERVE EXATAMENTE toda estrutura markdown existente (##, ###, listas, códigos)
+- MANTENHA TODAS as informações técnicas, comandos, códigos e tabelas já existentes
+- EXPANDA cada seção com mais detalhes, mas SEM REMOVER nada do original
+- Se o texto base tem 3 slides, crie ${slideCount} slides MANTENDO os 3 originais + novos
+- NUNCA substitua informações do texto base, apenas ADICIONE mais conteúdo
+- Use o texto base como ESQUELETO OBRIGATÓRIO e adicione carne aos ossos` : '';
     
     const enhancedPrompt = `
 INSTRUÇÃO CRÍTICA: COMECE IMEDIATAMENTE COM O PRIMEIRO SLIDE. NÃO ESCREVA NENHUMA INTRODUÇÃO, EXPLICAÇÃO OU FRASE COMO "AQUI ESTÃO", "OK", "VOU CRIAR", ETC.
 
-TAREFA: Criar exatamente ${slideCount} slides técnicos EXTENSOS e DETALHADOS em markdown sobre: "${prompt}"${textContext}
+${baseText ? 'MODO PRESERVAÇÃO: Use o texto base fornecido como ESQUELETO OBRIGATÓRIO. Mantenha TUDO e apenas expanda/detalhe.' : ''}
 
-REGRAS ABSOLUTAS:
+TAREFA: Criar EXATAMENTE ${slideCount} slides técnicos EXTENSOS e DETALHADOS em markdown sobre: "${prompt}"${textContext}
+
+REGRAS ABSOLUTAS DE CONTAGEM:
+- NÚMERO OBRIGATÓRIO: ${slideCount} slides (nem mais, nem menos)
+- CONTE os separadores ----'---- para garantir ${slideCount} slides
+- Se for menos que ${slideCount}, ADICIONE mais slides
+- Se for mais que ${slideCount}, PARE no slide ${slideCount}
+
+REGRAS DE FORMATO:
 - PRIMEIRO CARACTERE deve ser "#" (início do primeiro slide)
 - ZERO frases introdutórias, explicações ou meta-comentários
 - NÃO mencione "slides", "apresentação", "diretrizes" ou similar
@@ -29,6 +44,19 @@ REGRAS CRÍTICAS DE CONTEÚDO:
 - EXPLIQUE o "porquê" além do "como" 
 - USE tabelas, listas extensas, múltiplas seções por slide
 - DETALHE problemas, soluções, implementações e resultados
+
+${baseText ? `
+REGRAS OBRIGATÓRIAS DE PRESERVAÇÃO (TEXTO BASE FORNECIDO):
+- PRESERVE LITERALMENTE todos os títulos originais (não mude nenhuma palavra)
+- MANTENHA EXATAMENTE toda numeração, bullets e estrutura markdown
+- NÃO REMOVA nenhuma linha, parágrafo ou seção do texto base
+- NÃO SUBSTITUA informações técnicas, comandos ou códigos existentes
+- APENAS ADICIONE conteúdo novo ENTRE as seções originais ou APÓS elas
+- Se o texto base tem códigos/comandos, MANTENHA-OS e adicione explicações
+- Se o texto base tem tabelas, PRESERVE-AS e pode adicionar mais colunas/linhas
+- COPIE FIELMENTE o conteúdo base e depois EXPANDA cada parte
+- Trate o texto base como ESQUELETO SAGRADO que não pode ser alterado
+` : ''}
 
 LINGUAGEM SIMPLES E CLARA:
 - Use palavras do dia a dia em vez de jargões rebuscados
@@ -273,7 +301,13 @@ VOCABULÁRIO PROFISSIONAL MAS ACESSÍVEL:
 - Foque em problemas e soluções do mundo real
 - Mantenha tom profissional mas didático
 
-IMPORTANTE: COMECE IMEDIATAMENTE COM "# Título do Primeiro Slide" - SEM PREÂMBULOS, SEM "AQUI ESTÃO", SEM EXPLICAÇÕES. APENAS OS ${slideCount} SLIDES PUROS:`;
+IMPORTANTE: COMECE IMEDIATAMENTE COM "# Título do Primeiro Slide" - SEM PREÂMBULOS, SEM "AQUI ESTÃO", SEM EXPLICAÇÕES.
+
+${baseText ? 'LEMBRE-SE: PRESERVE FIELMENTE TODO O CONTEÚDO DO TEXTO BASE! Não remova, não substitua, apenas EXPANDA!' : ''}
+
+CONTE OS SLIDES: Deve haver EXATAMENTE ${slideCount} blocos separados por ----'----
+
+APENAS OS ${slideCount} SLIDES PUROS:`;
 
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: "POST",
@@ -358,6 +392,40 @@ IMPORTANTE: COMECE IMEDIATAMENTE COM "# Título do Primeiro Slide" - SEM PREÂMB
       throw new Error("Nenhum slide foi gerado pela IA");
     }
 
+    // Ajustar número de slides para bater exatamente com o solicitado
+    if (slides.length > slideCount) {
+      // Se tem mais slides que o solicitado, corta os extras
+      console.log(`IA gerou ${slides.length} slides, cortando para ${slideCount}`);
+      return slides.slice(0, slideCount);
+    } else if (slides.length < slideCount) {
+      // Se tem menos slides, duplica os últimos ou cria genéricos
+      console.log(`IA gerou apenas ${slides.length} slides, solicitado ${slideCount}`);
+      const remainingSlides = slideCount - slides.length;
+      
+      for (let i = 0; i < remainingSlides; i++) {
+        const slideNumber = slides.length + i + 1;
+        const genericSlide = `# Slide Adicional ${slideNumber}
+
+## Conteúdo complementar
+
+Este slide foi criado para completar o número solicitado de ${slideCount} slides.
+
+**Tópicos adicionais:**
+- Informação complementar sobre ${prompt}
+- Detalhes técnicos extras
+- Considerações finais
+
+## Próximos passos
+
+- Continue desenvolvendo este conteúdo
+- Adicione informações específicas
+- Personalize conforme necessário`;
+        
+        slides.push(genericSlide);
+      }
+    }
+
+    console.log(`Slides finais: ${slides.length} (solicitado: ${slideCount})`);
     return slides;
   } catch (error) {
     console.error("Erro ao gerar slides com Gemini:", error);

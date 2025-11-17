@@ -621,9 +621,18 @@ const Presentation = () => {
             loading={loading} 
           />
           {loading && (
-            <div className="message">
-              <Sparkles /> Carregando...
-            </div>
+ <>
+ <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />
+
+<div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+  bg-black/70 text-white px-4 py-2 rounded-full 
+  flex items-center gap-2 shadow-lg z-50">
+  <Sparkles className="w-4 h-4" />
+  Carregando...
+</div>
+
+ </>
+
           )}
           {error && (
             <div className="message error">

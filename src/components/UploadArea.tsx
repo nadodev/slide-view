@@ -294,7 +294,7 @@ export default function UploadArea({
                     {/* Slide Count Control */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 bg-slate-800/60 rounded-xl p-4 border border-slate-700/50">
                       <label className="text-slate-300 font-semibold text-sm md:text-base">
-                        Quantidade de slides:
+                        📊 Número exato de slides:
                       </label>
                       <div className="flex items-center gap-3 ml-auto">
                         <button
@@ -304,7 +304,7 @@ export default function UploadArea({
                         >
                           −
                         </button>
-                        <div className="bg-gradient-to-r from-emerald-600 to-cyan-600 px-5 py-2 rounded-lg shadow-lg">
+                        <div className="bg-gradient-to-r from-emerald-600 to-cyan-600 px-5 py-2 rounded-lg shadow-lg border border-emerald-400/30">
                           <span className="text-white font-bold text-lg">{slideCount}</span>
                         </div>
                         <button
@@ -315,7 +315,10 @@ export default function UploadArea({
                           +
                         </button>
                       </div>
-                      <span className="text-xs text-slate-500 ml-auto sm:ml-0">3-12 slides</span>
+                      <div className="text-xs text-slate-400 ml-auto sm:ml-0 text-center">
+                        <div>3-12 slides</div>
+                        <div className="text-emerald-400 font-medium">Garantido: {slideCount} slides</div>
+                      </div>
                     </div>
 
                     {/* Preservar Texto */}
@@ -334,10 +337,10 @@ export default function UploadArea({
                         </div>
                         <div className="flex-1">
                           <span className="text-slate-200 font-semibold text-sm md:text-base block">
-                            Preservar e expandir texto base
+                            ✨ Preservar e expandir conteúdo existente
                           </span>
                           <p className="text-xs text-slate-500 mt-1">
-                            Use conteúdo existente como base - a IA irá expandir e detalhar suas informações, mantendo os conceitos principais
+                            A IA irá manter TODO o seu conteúdo original e apenas adicionar mais detalhes, exemplos e explicações
                           </p>
                         </div>
                       </label>
@@ -346,13 +349,13 @@ export default function UploadArea({
                         <div className="space-y-3 animate-in fade-in duration-300">
                           <label className="block">
                             <span className="text-sm font-semibold text-slate-300 mb-2 block">
-                              Texto base (será expandido e detalhado pela IA):
+                              📝 Conteúdo que será preservado 100% (a IA só adiciona, nunca remove):
                             </span>
                             <textarea
                               value={baseText}
                               onChange={(e) => setBaseText(e.target.value)}
-                              placeholder="Cole aqui slides existentes, anotações, ou conteúdo que você quer que a IA use como base e expanda com mais detalhes técnicos e exemplos..."
-                              className="w-full h-24 px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none text-sm"
+                              placeholder="Cole aqui seu conteúdo existente (títulos, textos, códigos). A IA vai manter TUDO exatamente como está e apenas adicionar mais detalhes e exemplos..."
+                              className="w-full h-32 px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none text-sm"
                               disabled={loading}
                             />
                           </label>
