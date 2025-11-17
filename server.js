@@ -9,11 +9,6 @@ import os from 'os';
 
 // Carregar variáveis de ambiente
 dotenv.config();
-import dotenv from 'dotenv';
-import os from 'os';
-
-// Carregar variáveis de ambiente
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,7 +25,11 @@ const io = new Server(server, {
 });
 
 // Servir arquivos estáticos do build
-app.use(express.static(path.join(__dirname, 'dist')));
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'dist')));
+} else {
+  app.use(express.static(path.join(__dirname, 'dist')));
+}
 
 // Store das sessões de apresentação
 const presentations = new Map();
@@ -56,9 +55,17 @@ io.on('connection', (socket) => {
     console.log(`📺 Nova apresentação criada: ${sessionId}`);
     
     // Determinar URL base dinamicamente
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? (process.env.VITE_BASE_URL || process.env.BASE_URL || 'https://localhost:3001')
-      : (process.env.VITE_BASE_URL || 'http://localhost:5173');
+    const isProduction = process.env.NODE_ENV === 'production';
+    const vercelUrl = process.env.VERCEL_URL;
+    
+    let baseUrl;
+    if (isProduction && vercelUrl) {
+      baseUrl = `https://${vercelUrl}`;
+    } else if (isProduction) {
+      baseUrl = process.env.VITE_API_URL || process.env.BASE_URL || `http://localhost:${PORT}`;
+    } else {
+      baseUrl = process.env.VITE_API_URL || 'http://localhost:5173';
+    }
     
     callback({
       success: true,
@@ -176,12 +183,23 @@ io.on('connection', (socket) => {
 
 // Rota para controle remoto
 app.get('/remote/:sessionId', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  const indexPath = process.env.NODE_ENV === 'production' 
+    ? path.join(__dirname, 'index.html')
+    : path.join(__dirname, 'dist', 'index.html');
+  res.sendFile(indexPath);
 });
 
-// Fallback para SPA - usar middleware em vez de rota
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// Rota principal
+app.get('/', (req, res) => {
+  const indexPath = process.env.NODE_ENV === 'production' 
+    ? path.join(__dirname, 'index.html')
+    : path.join(__dirname, 'dist', 'index.html');
+  res.sendFile(indexPath);
+});
+
+// API de saúde
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 const PORT = process.env.PORT || 3001;
@@ -189,25 +207,35 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 // Função para obter IP local
 const getLocalIP = () => {
-  const interfaces = os.networkInterfaces();
-  for (const name of Object.keys(interfaces)) {
-    for (const iface of interfaces[name]) {
-      if (iface.family === 'IPv4' && !iface.internal) {
-        return iface.address;
+  try {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+      for (const iface of interfaces[name]) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          return iface.address;
+        }
       }
     }
+  } catch (error) {
+    console.log('Não foi possível obter IP local:', error.message);
   }
   return 'localhost';
 };
 
-server.listen(PORT, HOST, () => {
-  const localIP = getLocalIP();
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  console.log(`📱 URLs disponíveis:`);
-  console.log(`   Local:    http://localhost:${PORT}`);
-  console.log(`   Network:  http://${localIP}:${PORT}`);
-  if (process.env.NODE_ENV === 'production') {
-    console.log(`   Produção: ${process.env.BASE_URL || 'Configure BASE_URL'}`);
-  }
-  console.log(`📲 Controles remotos: /remote/{sessionId}`);
-});
+// Não iniciar servidor em ambientes serverless (Vercel)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  server.listen(PORT, HOST, () => {
+    const localIP = getLocalIP();
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`📱 URLs disponíveis:`);
+    console.log(`   Local:    http://localhost:${PORT}`);
+    console.log(`   Network:  http://${localIP}:${PORT}`);
+    if (process.env.NODE_ENV === 'production') {
+      console.log(`   Produção: ${process.env.BASE_URL || 'Configure BASE_URL'}`);
+    }
+    console.log(`📲 Controles remotos: /remote/{sessionId}`);
+  });
+}
+
+// Exportar para Vercel
+export default app;
