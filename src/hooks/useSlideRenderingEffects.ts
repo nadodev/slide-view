@@ -30,6 +30,13 @@ export function useSlideRenderingEffects({
     }
   }, [currentSlide, slides.length, slideContainerRef]);
 
+  // Resetar scroll do conteúdo do slide quando muda
+  useEffect(() => {
+    if (slideContentRef.current && slides.length > 0) {
+      slideContentRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [currentSlide, slides.length, slideContentRef]);
+
   useEffect(() => {
     if (thumbsRailRef.current && slides.length > 0) {
       const activeThumb =

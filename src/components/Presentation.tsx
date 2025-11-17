@@ -298,6 +298,13 @@ const Presentation = () => {
     thumbsRailRef,
   });
 
+  // Resetar scroll do modo apresentação quando muda de slide
+  useEffect(() => {
+    if (presenterMode && presenterScrollRef.current && slides.length > 0) {
+      presenterScrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [currentSlide, presenterMode, slides.length, presenterScrollRef]);
+
   usePresentationShortcuts({
     editing,
     presenterMode,
