@@ -12,45 +12,60 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 1000,
+    // Reduzir uso de memória durante o build
+    sourcemap: false,
+    minify: 'esbuild', // Mais rápido e usa menos memória que terser
+    target: 'esnext',
+    cssCodeSplit: true,
+    // Limitar paralelismo para reduzir uso de memória
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Vendor chunks
+          // Vendor chunks - estratégia mais agressiva
           if (id.includes('node_modules')) {
+            // React primeiro (mais importante)
             if (id.includes('react') || id.includes('react-dom')) {
               return 'vendor-react';
             }
-            if (id.includes('react-router')) {
-              return 'vendor-router';
-            }
-            if (id.includes('socket.io')) {
-              return 'vendor-socket';
-            }
+            // Mermaid separado (muito grande)
             if (id.includes('mermaid')) {
               return 'vendor-mermaid';
             }
+            // Socket.io
+            if (id.includes('socket.io')) {
+              return 'vendor-socket';
+            }
+            // Router
+            if (id.includes('react-router')) {
+              return 'vendor-router';
+            }
+            // Markdown tools
             if (id.includes('marked') || id.includes('highlight.js')) {
               return 'vendor-markdown';
             }
+            // Radix UI
             if (id.includes('@radix-ui')) {
               return 'vendor-radix';
             }
+            // Icons (lucide pode ser grande)
             if (id.includes('lucide-react')) {
               return 'vendor-icons';
             }
-            // Outras dependências grandes
-            if (id.includes('tailwindcss') || id.includes('postcss')) {
+            // Estilos (Tailwind pode ser pesado)
+            if (id.includes('tailwindcss') || id.includes('postcss') || id.includes('autoprefixer')) {
               return 'vendor-styles';
             }
-            // Chunk geral para outras dependências
-            return 'vendor';
+            // Resto em chunks menores
+            return 'vendor-other';
           }
-        }
-      }
-    },
-    // Otimizações de memória
-    minify: 'esbuild',
-    target: 'esnext',
-    cssCodeSplit: true
+        },
+        // Limitar número de chunks para reduzir overhead
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
+      },
+      // Limitar paralelismo
+      maxParallelFileOps: 2
+    }
   }
 })
