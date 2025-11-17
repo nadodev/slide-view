@@ -41,11 +41,12 @@ const io = new Server(server, {
 });
 
 // Servir arquivos estáticos do build
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'dist')));
-} else {
-  app.use(express.static(path.join(__dirname, 'dist')));
-}
+app.use(express.static(path.join(__dirname, 'dist'), {
+  maxAge: '1d', // Cache por 1 dia
+  index: false  // Não servir index.html automaticamente
+}));
+
+console.log('Servindo arquivos estáticos de:', path.join(__dirname, 'dist'));
 
 // Store das sessões de apresentação
 const presentations = new Map();
@@ -197,25 +198,21 @@ io.on('connection', (socket) => {
   });
 });
 
-// Rota para controle remoto
-app.get('/remote/:sessionId', (req, res) => {
-  const indexPath = process.env.NODE_ENV === 'production' 
-    ? path.join(__dirname, 'index.html')
-    : path.join(__dirname, 'dist', 'index.html');
-  res.sendFile(indexPath);
-});
-
-// Rota principal
-app.get('/', (req, res) => {
-  const indexPath = process.env.NODE_ENV === 'production' 
-    ? path.join(__dirname, 'index.html')
-    : path.join(__dirname, 'dist', 'index.html');
-  res.sendFile(indexPath);
-});
-
 // API de saúde
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Catch-all handler: send back React's index.html file for client-side routing
+app.get('*', (req, res) => {
+  const indexPath = path.join(__dirname, 'dist', 'index.html');
+  console.log('Serving index.html from:', indexPath);
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error('Erro ao servir index.html:', err);
+      res.status(500).send('Erro interno do servidor');
+    }
+  });
 });
 
 const PORT = process.env.PORT || 3001;
