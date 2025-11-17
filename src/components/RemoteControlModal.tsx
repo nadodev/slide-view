@@ -23,10 +23,11 @@ export const RemoteControlModal: React.FC<RemoteControlModalProps> = ({
 }) => {
   const isDevelopment = platform === 'development';
   
+  // Mostrar modal apenas quando não está suportado ou em desenvolvimento
   if (!isSupported || isDevelopment) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-md w-full p-8 border border-slate-700/50">
+        <div className="bg-linear-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-md w-full p-8 border border-slate-700/50">
           {/* Header */}
           <div className="text-center mb-6">
             <div className="inline-flex items-center gap-2 mb-3">
@@ -81,6 +82,6 @@ export const RemoteControlModal: React.FC<RemoteControlModalProps> = ({
     );
   }
 
-  // Se suportado, importar e mostrar QRCodeDisplay original
-  return null; // Isso não deveria ser chamado se isSupported for true
+  // Se suportado, não renderizar nada (o QRCodeDisplay será renderizado pelo componente pai)
+  return null;
 };

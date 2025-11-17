@@ -104,37 +104,54 @@ const Presentation = () => {
         setCurrentSlide(Math.max(0, Math.min(command.slideIndex, slides.length - 1)));
       } else if (command.command === 'scroll' && command.scrollDirection) {
         console.log('🖱️ Executando scroll:', command.scrollDirection);
-        console.log('📍 Posição atual da janela:', window.pageYOffset);
         
-        // Scroll da apresentação
-        const scrollAmount = 200; // Aumentar para 200 pixels
+        // Fazer scroll no container do slide, não na janela
+        const scrollContainer = slideContentRef.current;
+        if (!scrollContainer) {
+          console.warn('⚠️ Container de scroll não encontrado');
+          return;
+        }
+        
+        const scrollAmount = 200;
         const direction = command.scrollDirection === 'up' ? -scrollAmount : scrollAmount;
-        const currentPosition = window.pageYOffset;
-        const newPosition = Math.max(0, currentPosition + direction);
+        const currentPosition = scrollContainer.scrollTop;
+        const maxScroll = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+        const newPosition = Math.max(0, Math.min(currentPosition + direction, maxScroll));
         
         console.log('📊 Scroll details:', {
           scrollAmount,
           direction,
           currentPosition,
-          newPosition
+          newPosition,
+          maxScroll,
+          scrollHeight: scrollContainer.scrollHeight,
+          clientHeight: scrollContainer.clientHeight
         });
         
-        // Usar scrollTo ao invés de scrollBy para ser mais preciso
-        window.scrollTo({
+        scrollContainer.scrollTo({
           top: newPosition,
           behavior: 'smooth'
         });
         
         // Verificar se realmente rolou após um tempo
         setTimeout(() => {
-          console.log('📍 Nova posição após scroll:', window.pageYOffset);
+          console.log('📍 Nova posição após scroll:', scrollContainer.scrollTop);
         }, 500);
       } else if (command.command === 'scroll-sync' && command.scrollPosition !== undefined) {
         console.log('Sincronizando scroll para posição:', command.scrollPosition);
-        window.scrollTo({
-          top: command.scrollPosition,
-          behavior: 'smooth'
-        });
+        const scrollContainer = slideContentRef.current;
+        if (scrollContainer) {
+          scrollContainer.scrollTo({
+            top: command.scrollPosition,
+            behavior: 'smooth'
+          });
+        } else {
+          // Fallback para window se o container não estiver disponível
+          window.scrollTo({
+            top: command.scrollPosition,
+            behavior: 'smooth'
+          });
+        }
       } else if (command.command === 'presenter') {
         console.log('Ativando modo apresentação');
         setPresenterMode(true);
@@ -154,7 +171,7 @@ const Presentation = () => {
         setTransitionKey(prev => prev + 1);
       }
     });
-  }, [onRemoteCommand, slides.length, setCurrentSlide, setTransitionKey]);
+  }, [onRemoteCommand, slides.length, setCurrentSlide, setTransitionKey, slideContentRef]);
 
   // Update remote clients when slide changes
   useEffect(() => {
