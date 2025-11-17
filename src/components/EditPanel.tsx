@@ -71,7 +71,143 @@ export default function EditPanel({
   ]);
   const [activeFileId, setActiveFileId] = useState<string>('1');
 
-  // Templates pré-definidos
+  // Comandos para o menu slash (estilo Notion)
+  const slashCommands = [
+    {
+      id: 'title',
+      name: 'Título',
+      keywords: ['titulo', 'h1', 'heading1', 'heading'],
+      icon: Heading1,
+      content: '# Título Principal\n\n',
+      description: 'Título grande (H1)'
+    },
+    {
+      id: 'subtitle',
+      name: 'Subtítulo',
+      keywords: ['subtitulo', 'h2', 'heading2'],
+      icon: Heading2,
+      content: '## Subtítulo\n\n',
+      description: 'Subtítulo (H2)'
+    },
+    {
+      id: 'description',
+      name: 'Descrição',
+      keywords: ['descricao', 'texto', 'paragrafo', 'p'],
+      icon: FileText,
+      content: 'Descrição do conteúdo aqui...\n\n',
+      description: 'Texto descritivo'
+    },
+    {
+      id: 'bullets',
+      name: 'Lista com Bullets',
+      keywords: ['lista', 'bullets', 'ul', 'unordered'],
+      icon: List,
+      content: '- Item 1\n- Item 2\n- Item 3\n\n',
+      description: 'Lista não ordenada'
+    },
+    {
+      id: 'numbered',
+      name: 'Lista Numerada',
+      keywords: ['numerada', 'ol', 'ordered', 'lista numerada'],
+      icon: List,
+      content: '1. Primeiro item\n2. Segundo item\n3. Terceiro item\n\n',
+      description: 'Lista ordenada'
+    },
+    {
+      id: 'bold',
+      name: 'Texto em Negrito',
+      keywords: ['negrito', 'bold', 'strong'],
+      icon: Bold,
+      content: '**Texto em negrito**\n\n',
+      description: 'Texto destacado'
+    },
+    {
+      id: 'italic',
+      name: 'Texto em Itálico',
+      keywords: ['italico', 'italic', 'enfase'],
+      icon: Italic,
+      content: '*Texto em itálico*\n\n',
+      description: 'Texto enfatizado'
+    },
+    {
+      id: 'code',
+      name: 'Bloco de Código',
+      keywords: ['codigo', 'code', 'bloco', 'codeblock'],
+      icon: Code,
+      content: '```\n// Seu código aqui\n```\n\n',
+      description: 'Código formatado'
+    },
+    {
+      id: 'inline-code',
+      name: 'Código Inline',
+      keywords: ['inline', 'codigo inline'],
+      icon: Code,
+      content: '`código inline`\n\n',
+      description: 'Código em linha'
+    },
+    {
+      id: 'table',
+      name: 'Tabela',
+      keywords: ['tabela', 'table'],
+      icon: Table,
+      content: '| Coluna 1 | Coluna 2 | Coluna 3 |\n|----------|----------|----------|\n| Dado 1   | Dado 2   | Dado 3   |\n\n',
+      description: 'Tabela markdown'
+    },
+    {
+      id: 'quote',
+      name: 'Citação',
+      keywords: ['citacao', 'quote', 'blockquote'],
+      icon: Quote,
+      content: '> Citação ou destaque importante\n\n',
+      description: 'Bloco de citação'
+    },
+    {
+      id: 'image',
+      name: 'Imagem',
+      keywords: ['imagem', 'image', 'img'],
+      icon: Image,
+      content: '![Descrição da imagem](url-da-imagem)\n\n',
+      description: 'Inserir imagem'
+    },
+    {
+      id: 'link',
+      name: 'Link',
+      keywords: ['link', 'url', 'hyperlink'],
+      icon: Link2,
+      content: '[Texto do link](url)\n\n',
+      description: 'Inserir link'
+    },
+    {
+      id: 'divider',
+      name: 'Divisor',
+      keywords: ['divisor', 'divider', 'hr', 'linha'],
+      icon: Minimize2,
+      content: '---\n\n',
+      description: 'Linha divisória'
+    },
+    {
+      id: 'mermaid',
+      name: 'Diagrama Mermaid',
+      keywords: ['mermaid', 'diagrama', 'grafico', 'flowchart'],
+      icon: Code,
+      content: '```mermaid\ngraph TD\n    A[Início] --> B[Processo]\n    B --> C{Fim?}\n    C -->|Sim| D[Finalizar]\n    C -->|Não| B\n```\n\n',
+      description: 'Diagrama de fluxo Mermaid'
+    }
+  ];
+
+  // Filtrar comandos baseado na query
+  const filteredSlashCommands = useMemo(() => {
+    if (!slashQuery) return slashCommands;
+    const query = slashQuery.toLowerCase();
+    return slashCommands.filter(cmd => 
+      cmd.name.toLowerCase().includes(query) ||
+      cmd.keywords.some(kw => kw.includes(query)) ||
+      cmd.description.toLowerCase().includes(query)
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slashQuery]);
+
+  // Templates pré-definidos (para o modal de templates)
   const templates = [
     {
       id: 'title',
@@ -223,6 +359,51 @@ export default function EditPanel({
     }
   };
 
+  // Função para inserir comando slash
+  const insertSlashCommand = (commandContent: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentContent = mode === 'create' && activeFile ? activeFile.content : value;
+
+    // Encontrar a posição do "/" mais próximo antes do cursor
+    let slashPos = start - 1;
+    while (slashPos >= 0 && currentContent[slashPos] !== '/' && currentContent[slashPos] !== '\n') {
+      slashPos--;
+    }
+
+    if (slashPos < 0 || currentContent[slashPos] !== '/') {
+      setShowSlashMenu(false);
+      return;
+    }
+
+    // Remover "/" e a query, inserir o comando
+    const beforeSlash = currentContent.substring(0, slashPos);
+    const afterCursor = currentContent.substring(end);
+    const newContent = beforeSlash + commandContent + afterCursor;
+
+    if (mode === 'create' && activeFile) {
+      updateFileContent(activeFileId, newContent);
+    } else {
+      onChange(newContent);
+    }
+
+    // Reposicionar cursor após o comando inserido
+    setTimeout(() => {
+      if (textarea) {
+        const newPosition = slashPos + commandContent.length;
+        textarea.setSelectionRange(newPosition, newPosition);
+        textarea.focus();
+      }
+    }, 0);
+
+    setShowSlashMenu(false);
+    setSlashQuery('');
+    setSelectedSlashIndex(0);
+  };
+
   // Função para inserir template na posição do cursor
   const insertTemplate = (templateContent: string) => {
     const textarea = textareaRef.current;
@@ -231,7 +412,7 @@ export default function EditPanel({
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const currentContent = mode === 'create' && activeFile ? activeFile.content : value;
-    
+
     const newContent = 
       currentContent.substring(0, start) + 
       templateContent + 
@@ -1163,10 +1344,55 @@ export default function EditPanel({
                 ref={textareaRef}
                     value={mode === 'create' && activeFile ? activeFile.content : value}
                     onChange={(e) => {
+                      const newValue = e.target.value;
                       if (mode === 'create' && activeFile) {
-                        updateFileContent(activeFileId, e.target.value);
+                        updateFileContent(activeFileId, newValue);
                       } else {
-                        onChange(e.target.value);
+                        onChange(newValue);
+                      }
+
+                      // Detectar "/" para mostrar menu slash
+                      const cursorPos = e.target.selectionStart;
+                      const textBeforeCursor = newValue.substring(0, cursorPos);
+                      const lastLine = textBeforeCursor.split('\n').pop() || '';
+                      
+                      if (lastLine === '/' || (lastLine.startsWith('/') && !lastLine.includes(' '))) {
+                        setShowSlashMenu(true);
+                        setSlashQuery(lastLine.substring(1));
+                        setSelectedSlashIndex(0);
+                      } else if (lastLine.startsWith('/') && lastLine.includes(' ')) {
+                        setShowSlashMenu(false);
+                        setSlashQuery('');
+                      } else if (!lastLine.startsWith('/')) {
+                        setShowSlashMenu(false);
+                        setSlashQuery('');
+                      } else {
+                        const query = lastLine.substring(1);
+                        setSlashQuery(query);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (showSlashMenu) {
+                        if (e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          setSelectedSlashIndex((prev) => 
+                            prev < filteredSlashCommands.length - 1 ? prev + 1 : 0
+                          );
+                        } else if (e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          setSelectedSlashIndex((prev) => 
+                            prev > 0 ? prev - 1 : filteredSlashCommands.length - 1
+                          );
+                        } else if (e.key === 'Enter' || e.key === 'Tab') {
+                          e.preventDefault();
+                          if (filteredSlashCommands[selectedSlashIndex]) {
+                            insertSlashCommand(filteredSlashCommands[selectedSlashIndex].content);
+                          }
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault();
+                          setShowSlashMenu(false);
+                          setSlashQuery('');
+                        }
                       }
                     }}
                 onScroll={onEditorScroll}
@@ -1311,10 +1537,55 @@ Comece a digitar seu conteúdo em Markdown aqui...
                     ref={textareaRef}
                         value={mode === 'create' && activeFile ? activeFile.content : value}
                         onChange={(e) => {
+                          const newValue = e.target.value;
                           if (mode === 'create' && activeFile) {
-                            updateFileContent(activeFileId, e.target.value);
+                            updateFileContent(activeFileId, newValue);
                           } else {
-                            onChange(e.target.value);
+                            onChange(newValue);
+                          }
+
+                          // Detectar "/" para mostrar menu slash
+                          const cursorPos = e.target.selectionStart;
+                          const textBeforeCursor = newValue.substring(0, cursorPos);
+                          const lastLine = textBeforeCursor.split('\n').pop() || '';
+                          
+                          if (lastLine === '/' || (lastLine.startsWith('/') && !lastLine.includes(' '))) {
+                            setShowSlashMenu(true);
+                            setSlashQuery(lastLine.substring(1));
+                            setSelectedSlashIndex(0);
+                          } else if (lastLine.startsWith('/') && lastLine.includes(' ')) {
+                            setShowSlashMenu(false);
+                            setSlashQuery('');
+                          } else if (!lastLine.startsWith('/')) {
+                            setShowSlashMenu(false);
+                            setSlashQuery('');
+                          } else {
+                            const query = lastLine.substring(1);
+                            setSlashQuery(query);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (showSlashMenu) {
+                            if (e.key === 'ArrowDown') {
+                              e.preventDefault();
+                              setSelectedSlashIndex((prev) => 
+                                prev < filteredSlashCommands.length - 1 ? prev + 1 : 0
+                              );
+                            } else if (e.key === 'ArrowUp') {
+                              e.preventDefault();
+                              setSelectedSlashIndex((prev) => 
+                                prev > 0 ? prev - 1 : filteredSlashCommands.length - 1
+                              );
+                            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                              e.preventDefault();
+                              if (filteredSlashCommands[selectedSlashIndex]) {
+                                insertSlashCommand(filteredSlashCommands[selectedSlashIndex].content);
+                              }
+                            } else if (e.key === 'Escape') {
+                              e.preventDefault();
+                              setShowSlashMenu(false);
+                              setSlashQuery('');
+                            }
                           }
                         }}
                     onScroll={onEditorScroll}
@@ -1503,10 +1774,55 @@ Comece a digitar seu conteúdo em Markdown aqui...
                 ref={textareaRef}
                   value={mode === 'create' && activeFile ? activeFile.content : value}
                   onChange={(e) => {
+                    const newValue = e.target.value;
                     if (mode === 'create' && activeFile) {
-                      updateFileContent(activeFileId, e.target.value);
+                      updateFileContent(activeFileId, newValue);
                     } else {
-                      onChange(e.target.value);
+                      onChange(newValue);
+                    }
+
+                    // Detectar "/" para mostrar menu slash
+                    const cursorPos = e.target.selectionStart;
+                    const textBeforeCursor = newValue.substring(0, cursorPos);
+                    const lastLine = textBeforeCursor.split('\n').pop() || '';
+                    
+                    if (lastLine === '/' || (lastLine.startsWith('/') && !lastLine.includes(' '))) {
+                      setShowSlashMenu(true);
+                      setSlashQuery(lastLine.substring(1));
+                      setSelectedSlashIndex(0);
+                    } else if (lastLine.startsWith('/') && lastLine.includes(' ')) {
+                      setShowSlashMenu(false);
+                      setSlashQuery('');
+                    } else if (!lastLine.startsWith('/')) {
+                      setShowSlashMenu(false);
+                      setSlashQuery('');
+                    } else {
+                      const query = lastLine.substring(1);
+                      setSlashQuery(query);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (showSlashMenu) {
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        setSelectedSlashIndex((prev) => 
+                          prev < filteredSlashCommands.length - 1 ? prev + 1 : 0
+                        );
+                      } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        setSelectedSlashIndex((prev) => 
+                          prev > 0 ? prev - 1 : filteredSlashCommands.length - 1
+                        );
+                      } else if (e.key === 'Enter' || e.key === 'Tab') {
+                        e.preventDefault();
+                        if (filteredSlashCommands[selectedSlashIndex]) {
+                          insertSlashCommand(filteredSlashCommands[selectedSlashIndex].content);
+                        }
+                      } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        setShowSlashMenu(false);
+                        setSlashQuery('');
+                      }
                     }
                   }}
                 onScroll={onEditorScroll}
@@ -1563,6 +1879,72 @@ Comece a digitar seu conteúdo em Markdown aqui...
           </div>
         </footer>
       </div>
+
+      {/* Menu Slash (estilo Notion) */}
+      {showSlashMenu && filteredSlashCommands.length > 0 && textareaRef.current && (
+        <div
+          ref={slashMenuRef}
+          className="fixed z-[10002] bg-slate-800 border border-slate-700 rounded-lg shadow-2xl overflow-hidden"
+          style={{
+            top: (() => {
+              const textarea = textareaRef.current;
+              if (!textarea) return 0;
+              const rect = textarea.getBoundingClientRect();
+              const scrollTop = textarea.scrollTop;
+              const lineHeight = 28; // line-height aproximado
+              const lines = textarea.value.substring(0, textarea.selectionStart).split('\n').length;
+              return rect.top + (lines * lineHeight) - scrollTop + 40;
+            })(),
+            left: (() => {
+              const textarea = textareaRef.current;
+              if (!textarea) return 0;
+              const rect = textarea.getBoundingClientRect();
+              return rect.left + 48; // offset para numeração de linhas
+            })(),
+            width: '320px',
+            maxHeight: '400px',
+          }}
+        >
+          <div className="p-2 border-b border-slate-700/50 bg-slate-900/50">
+            <div className="text-xs text-slate-400 px-2">Comandos</div>
+          </div>
+          <div className="overflow-y-auto max-h-[360px] custom-scrollbar">
+            {filteredSlashCommands.map((cmd, index) => {
+              const Icon = cmd.icon;
+              return (
+                <button
+                  key={cmd.id}
+                  onClick={() => insertSlashCommand(cmd.content)}
+                  className={`w-full p-3 flex items-center gap-3 text-left transition-colors ${
+                    index === selectedSlashIndex
+                      ? 'bg-blue-600/20 border-l-2 border-blue-500'
+                      : 'hover:bg-slate-700/50'
+                  }`}
+                  onMouseEnter={() => setSelectedSlashIndex(index)}
+                >
+                  <div className={`p-2 rounded-lg ${
+                    index === selectedSlashIndex
+                      ? 'bg-blue-600/30'
+                      : 'bg-slate-700/50'
+                  }`}>
+                    <Icon size={18} className={index === selectedSlashIndex ? 'text-blue-400' : 'text-slate-400'} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-medium ${
+                      index === selectedSlashIndex ? 'text-white' : 'text-slate-200'
+                    }`}>
+                      {cmd.name}
+                    </div>
+                    <div className="text-xs text-slate-400 truncate">
+                      {cmd.description}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Modal de Ajuda */}
       {showHelp && (
