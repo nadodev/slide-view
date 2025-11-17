@@ -112,7 +112,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
 
     // Aguardar um pouco mais para garantir que o canvas está renderizado
     const timer = setTimeout(() => {
-      generateQR();
+    generateQR();
     }, 300);
 
     return () => clearTimeout(timer);
@@ -176,8 +176,8 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           <div className="relative w-[200px] h-[200px]">
             {isLoading && (
               <div className="absolute inset-0 bg-slate-100 animate-pulse rounded-lg flex items-center justify-center z-10">
-                <QrCode className="text-slate-400" size={48} />
-              </div>
+              <QrCode className="text-slate-400" size={48} />
+            </div>
             )}
             <canvas
               ref={canvasRef}

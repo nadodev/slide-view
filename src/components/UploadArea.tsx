@@ -109,7 +109,7 @@ export default function UploadArea({
     const y = e.clientY;
     
     if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-      setIsDragging(false);
+    setIsDragging(false);
     }
   };
 
@@ -316,8 +316,8 @@ export default function UploadArea({
                         size="lg"
                         className="group relative px-8 md:px-10 py-3 md:py-4 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-600 hover:from-cyan-600 hover:via-fuchsia-600 hover:to-violet-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-2xl hover:shadow-violet-500/50 transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none overflow-hidden border-0"
                       >
-                        <FileText size={22} />
-                        {loading ? "Processando..." : "Selecionar Arquivos"}
+                          <FileText size={22} />
+                          {loading ? "Processando..." : "Selecionar Arquivos"}
                       </Button>
 
                       {/* Progress Bar */}
@@ -505,8 +505,8 @@ export default function UploadArea({
                       size="lg"
                       className="group relative w-full px-10 py-4 bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 hover:from-blue-600 hover:via-cyan-600 hover:to-emerald-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-2xl hover:shadow-emerald-500/50 transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none overflow-hidden border-0"
                     >
-                      <Wand2 size={22} className={loading ? "animate-spin" : ""} />
-                      {loading ? "Gerando slides mágicos..." : "✨ Gerar Apresentação"}
+                        <Wand2 size={22} className={loading ? "animate-spin" : ""} />
+                        {loading ? "Gerando slides mágicos..." : "✨ Gerar Apresentação"}
                     </Button>
                   </div>
 

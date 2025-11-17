@@ -308,7 +308,7 @@ const Presentation = () => {
         await document.documentElement.requestFullscreen();
       } else {
         await document.exitFullscreen();
-      }
+    }
     } catch {
       /* ignore */
     }
@@ -328,7 +328,7 @@ const Presentation = () => {
   useEffect(() => {
     if (presenterMode && presenterScrollRef.current && slides.length > 0) {
       presenterScrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
-    }
+        }
   }, [currentSlide, presenterMode, slides.length, presenterScrollRef]);
 
   usePresentationShortcuts({
@@ -394,14 +394,14 @@ const Presentation = () => {
         <PresentationEmptyState
           highContrast={highContrast}
           onToggleHighContrast={() => setHighContrast((v) => !v)}
-          onFilesChange={handleFileUpload} 
-          onAIGenerate={handleAIGeneration}
+            onFilesChange={handleFileUpload} 
+            onAIGenerate={handleAIGeneration}
           onCreateSlide={() => {
             // Abrir o editor no modo de criação
             setDraftContent("");
             setEditing(true);
           }}
-          loading={loading} 
+            loading={loading} 
           error={error}
           warning={warning}
         />
@@ -426,17 +426,17 @@ const Presentation = () => {
               onToggleContrast={() => setHighContrast((v) => !v)}
             />
           ) : presenterMode ? (
-            <PresenterView
-              currentHtml={slides[currentSlide].html}
-              currentIndex={currentSlide}
-              slidesLength={slides.length}
-              onNext={() =>
-                setCurrentSlide((s) => Math.min(slides.length - 1, s + 1))
-              }
-              onPrev={() => setCurrentSlide((s) => Math.max(0, s - 1))}
-              onExit={() => setPresenterMode(false)}
+                <PresenterView
+                  currentHtml={slides[currentSlide].html}
+                  currentIndex={currentSlide}
+                  slidesLength={slides.length}
+                  onNext={() =>
+                    setCurrentSlide((s) => Math.min(slides.length - 1, s + 1))
+                  }
+                  onPrev={() => setCurrentSlide((s) => Math.max(0, s - 1))}
+                  onExit={() => setPresenterMode(false)}
               scrollContainerRef={presenterScrollRef}
-            />
+                />
               ) : (
             <SlidesWorkspace
                       slides={slides}
@@ -500,17 +500,17 @@ const Presentation = () => {
         }}
         onSave={() => {
           if (slides.length > 0 && currentSlide < slides.length) {
-            setSlides((prev) => {
-              const copy = prev.slice();
-              const item = copy[currentSlide];
-              if (item) {
-                item.content = draftContent;
-                item.html = parseMarkdownSafe(draftContent);
-              }
-              return copy;
-            });
-            setEditing(false);
-            saveSlideToFile(currentSlide, draftContent);
+          setSlides((prev) => {
+            const copy = prev.slice();
+            const item = copy[currentSlide];
+            if (item) {
+              item.content = draftContent;
+              item.html = parseMarkdownSafe(draftContent);
+            }
+            return copy;
+          });
+          setEditing(false);
+          saveSlideToFile(currentSlide, draftContent);
           }
         }}
         mode={slides.length === 0 ? 'create' : 'edit'}

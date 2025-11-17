@@ -225,7 +225,7 @@ export const RemoteControl: React.FC = () => {
       // para evitar micro-ajustes que causam loops
       if (diff > 5) {
         isScrollingRef.current = true;
-        mirrorRef.current.scrollTop = scrollPosition;
+      mirrorRef.current.scrollTop = scrollPosition;
         
         // Resetar flag após um tempo
         setTimeout(() => {
@@ -244,11 +244,11 @@ export const RemoteControl: React.FC = () => {
     }
 
     scrollTimeoutRef.current = setTimeout(() => {
-      socket.emit('remote-command', {
-        sessionId,
-        command: 'scroll-sync',
-        scrollPosition: scrollTop,
-      });
+    socket.emit('remote-command', {
+      sessionId,
+      command: 'scroll-sync',
+      scrollPosition: scrollTop,
+    });
       console.log('📱 Scroll sincronizado:', scrollTop);
     }, 50);
   };
@@ -364,7 +364,7 @@ export const RemoteControl: React.FC = () => {
     };
 
     if (commandMessages[command]) {
-      toast.success(commandMessages[command]);
+    toast.success(commandMessages[command]);
     }
   };
 
@@ -483,7 +483,7 @@ export const RemoteControl: React.FC = () => {
               <div className="flex items-center gap-2 bg-slate-800/60 backdrop-blur-sm border border-white/10 px-3 py-1.5 rounded-lg">
                 <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
                 <span className="text-white font-semibold text-xs">
-                  {currentSlide + 1} / {totalSlides}
+                {currentSlide + 1} / {totalSlides}
                 </span>
               </div>
             </div>
