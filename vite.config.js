@@ -21,13 +21,16 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Vendor chunks - estratégia mais agressiva
+          // Vendor chunks - estratégia otimizada
           if (id.includes('node_modules')) {
-            // React primeiro (mais importante)
-            if (id.includes('react') || id.includes('react-dom')) {
+            // React e todas as dependências do React juntas (CRÍTICO)
+            // Isso garante que React esteja sempre disponível
+            if (id.includes('react') || id.includes('react-dom') || 
+                id.includes('react-router') || id.includes('@radix-ui') ||
+                id.includes('react-resizable-panels') || id.includes('sonner')) {
               return 'vendor-react';
             }
-            // Mermaid separado (muito grande)
+            // Mermaid separado (muito grande e pode ser carregado dinamicamente)
             if (id.includes('mermaid')) {
               return 'vendor-mermaid';
             }
@@ -35,17 +38,9 @@ export default defineConfig({
             if (id.includes('socket.io')) {
               return 'vendor-socket';
             }
-            // Router
-            if (id.includes('react-router')) {
-              return 'vendor-router';
-            }
             // Markdown tools
             if (id.includes('marked') || id.includes('highlight.js')) {
               return 'vendor-markdown';
-            }
-            // Radix UI
-            if (id.includes('@radix-ui')) {
-              return 'vendor-radix';
             }
             // Icons (lucide pode ser grande)
             if (id.includes('lucide-react')) {
@@ -66,6 +61,15 @@ export default defineConfig({
       },
       // Limitar paralelismo
       maxParallelFileOps: 2
+    },
+    // Garantir que os chunks sejam carregados na ordem correta
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true
     }
+  },
+  // Resolver dependências do React
+  resolve: {
+    dedupe: ['react', 'react-dom']
   }
 })
