@@ -20,6 +20,7 @@ import {
 } from "./ui/drawer";
 import { fetchFilesFromGitHub, pushFilesToGitHub, validateGitHubToken, type GitHubConfig, type GitHubFile } from "../utils/github";
 import { toast } from "sonner";
+import GitHubIntegrationModal from "./GitHubIntegrationModal";
 
 type MarkdownFile = {
   id: string;
@@ -66,21 +67,7 @@ export default function EditPanel({
   const [slashQuery, setSlashQuery] = useState('');
   const [selectedSlashIndex, setSelectedSlashIndex] = useState(0);
   const slashMenuRef = useRef<HTMLDivElement | null>(null);
-  const [showGitHub, setShowGitHub] = useState(false);
-  const [gitHubConfig, setGitHubConfig] = useState<GitHubConfig>(() => {
-    // Carregar configuração do localStorage
-    const saved = localStorage.getItem('github-config');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return { token: '', owner: '', repo: '', branch: 'main', path: 'slides' };
-      }
-    }
-    return { token: '', owner: '', repo: '', branch: 'main', path: 'slides' };
-  });
-  const [gitHubStatus, setGitHubStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [gitHubMessage, setGitHubMessage] = useState('');
+  const [showGitHubModal, setShowGitHubModal] = useState(false);
   
   // Estado para modo de criação de múltiplos arquivos
   const [mdFiles, setMdFiles] = useState<MarkdownFile[]>([
@@ -681,130 +668,15 @@ export default function EditPanel({
   // Inicializar Mermaid para o preview
   useMermaid(previewHtml);
 
-  // Salvar configuração do GitHub no localStorage
-  useEffect(() => {
-    if (gitHubConfig.token || gitHubConfig.owner || gitHubConfig.repo) {
-      localStorage.setItem('github-config', JSON.stringify(gitHubConfig));
-    }
-  }, [gitHubConfig]);
-
-  // Funções GitHub
-  const handleGitHubPull = async () => {
-    if (!gitHubConfig.token || !gitHubConfig.owner || !gitHubConfig.repo) {
-      toast.error('Configure o GitHub primeiro');
-      setShowGitHub(true);
-      return;
-    }
-
-    setGitHubStatus('loading');
-    setGitHubMessage('Buscando arquivos do GitHub...');
-
-    try {
-      const files = await fetchFilesFromGitHub(gitHubConfig);
-      
-      if (files.length === 0) {
-        toast.warning('Nenhum arquivo .md encontrado no repositório');
-        setGitHubStatus('idle');
-        setGitHubMessage('');
-        return;
-      }
-
-      // Converter para formato MarkdownFile
-      const mdFilesData: MarkdownFile[] = files.map((file, index) => ({
-        id: Date.now().toString() + index,
-        name: file.name,
-        content: file.content
-      }));
-
-      setMdFiles(mdFilesData);
-      setActiveFileId(mdFilesData[0]?.id || '1');
-      
-      toast.success(`${files.length} arquivo(s) carregado(s) do GitHub`);
-      setGitHubStatus('success');
-      setGitHubMessage(`✅ ${files.length} arquivo(s) carregado(s) com sucesso`);
-      
-      setTimeout(() => {
-        setGitHubStatus('idle');
-        setGitHubMessage('');
-      }, 3000);
-    } catch (error: any) {
-      console.error('Erro ao fazer pull do GitHub:', error);
-      toast.error(`Erro: ${error.message || 'Falha ao buscar arquivos'}`);
-      setGitHubStatus('error');
-      setGitHubMessage(`❌ Erro: ${error.message || 'Falha ao buscar arquivos'}`);
-    }
+  // Handlers para o modal de integração GitHub
+  const handleGitHubFilesLoaded = (files: MarkdownFile[]) => {
+    setMdFiles(files);
+    setActiveFileId(files[0]?.id || '1');
+    toast.success(`${files.length} arquivo(s) carregado(s) do GitHub`);
   };
 
-  const handleGitHubPush = async () => {
-    if (!gitHubConfig.token || !gitHubConfig.owner || !gitHubConfig.repo) {
-      toast.error('Configure o GitHub primeiro');
-      setShowGitHub(true);
-      return;
-    }
-
-    const filesToPush = mdFiles.filter(f => f.content.trim());
-    
-    if (filesToPush.length === 0) {
-      toast.warning('Nenhum arquivo para enviar');
-      return;
-    }
-
-    setGitHubStatus('loading');
-    setGitHubMessage('Enviando arquivos para o GitHub...');
-
-    try {
-      const githubFiles: GitHubFile[] = filesToPush.map(file => ({
-        name: file.name,
-        content: file.content
-      }));
-
-      await pushFilesToGitHub(
-        gitHubConfig,
-        githubFiles,
-        `Update ${filesToPush.length} markdown file(s)`
-      );
-
-      toast.success(`${filesToPush.length} arquivo(s) enviado(s) para o GitHub`);
-      setGitHubStatus('success');
-      setGitHubMessage(`✅ ${filesToPush.length} arquivo(s) enviado(s) com sucesso`);
-      
-      setTimeout(() => {
-        setGitHubStatus('idle');
-        setGitHubMessage('');
-      }, 3000);
-    } catch (error: any) {
-      console.error('Erro ao fazer push para GitHub:', error);
-      toast.error(`Erro: ${error.message || 'Falha ao enviar arquivos'}`);
-      setGitHubStatus('error');
-      setGitHubMessage(`❌ Erro: ${error.message || 'Falha ao enviar arquivos'}`);
-    }
-  };
-
-  const handleTestGitHubConnection = async () => {
-    if (!gitHubConfig.token) {
-      toast.error('Token do GitHub é obrigatório');
-      return;
-    }
-
-    setGitHubStatus('loading');
-    setGitHubMessage('Testando conexão...');
-
-    try {
-      const isValid = await validateGitHubToken(gitHubConfig.token);
-      if (isValid) {
-        toast.success('Conexão com GitHub válida!');
-        setGitHubStatus('success');
-        setGitHubMessage('✅ Conexão válida');
-      } else {
-        toast.error('Token inválido ou sem permissões');
-        setGitHubStatus('error');
-        setGitHubMessage('❌ Token inválido');
-      }
-    } catch (error: any) {
-      toast.error(`Erro: ${error.message}`);
-      setGitHubStatus('error');
-      setGitHubMessage(`❌ Erro: ${error.message}`);
-    }
+  const getCurrentFiles = () => {
+    return mdFiles;
   };
 
   // Calcular número de linhas
@@ -1182,167 +1054,17 @@ export default function EditPanel({
             </Drawer>
 
             {/* Botão de GitHub */}
-            <Drawer open={showGitHub} onOpenChange={setShowGitHub}>
-              <DrawerTrigger asChild>
-                <button
-                  className="group px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white border border-slate-700/50"
-                  title="GitHub (Pull/Push)"
-                >
-                  <Github
-                    size={16}
-                    className="transition-transform group-hover:scale-110"
-                  />
-                  <span className="text-sm font-medium">GitHub</span>
-                </button>
-              </DrawerTrigger>
-              <DrawerContent side="right" className="bg-slate-900 border-slate-700">
-                <DrawerHeader>
-                  <DrawerTitle className="text-white text-xl font-bold flex items-center gap-2">
-                    <Github size={20} />
-                    Integração GitHub
-                  </DrawerTitle>
-                  <DrawerDescription className="text-slate-400">
-                    Configure e sincronize seus arquivos Markdown com o GitHub
-                  </DrawerDescription>
-                </DrawerHeader>
-                <div className="px-6 py-4 space-y-4">
-                  {/* Status */}
-                  {gitHubMessage && (
-                    <div className={`p-3 rounded-lg ${
-                      gitHubStatus === 'success' ? 'bg-green-900/20 border border-green-700/50' :
-                      gitHubStatus === 'error' ? 'bg-red-900/20 border border-red-700/50' :
-                      'bg-blue-900/20 border border-blue-700/50'
-                    }`}>
-                      <p className="text-sm text-slate-200">{gitHubMessage}</p>
-                    </div>
-                  )}
-
-                  {/* Configuração */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Personal Access Token *
-                      </label>
-                      <input
-                        type="password"
-                        value={gitHubConfig.token}
-                        onChange={(e) => setGitHubConfig({ ...gitHubConfig, token: e.target.value })}
-                        placeholder="ghp_xxxxxxxxxxxx"
-                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <p className="text-xs text-slate-500 mt-1">
-                        Crie em: Settings → Developer settings → Personal access tokens
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Owner/Username
-                        </label>
-                        <input
-                          type="text"
-                          value={gitHubConfig.owner}
-                          onChange={(e) => setGitHubConfig({ ...gitHubConfig, owner: e.target.value })}
-                          placeholder="seu-usuario"
-                          className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Repositório
-                        </label>
-                        <input
-                          type="text"
-                          value={gitHubConfig.repo}
-                          onChange={(e) => setGitHubConfig({ ...gitHubConfig, repo: e.target.value })}
-                          placeholder="meu-repo"
-                          className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Branch
-                        </label>
-                        <input
-                          type="text"
-                          value={gitHubConfig.branch}
-                          onChange={(e) => setGitHubConfig({ ...gitHubConfig, branch: e.target.value })}
-                          placeholder="main"
-                          className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Caminho (opcional)
-                        </label>
-                        <input
-                          type="text"
-                          value={gitHubConfig.path || ''}
-                          onChange={(e) => setGitHubConfig({ ...gitHubConfig, path: e.target.value })}
-                          placeholder="slides"
-                          className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Ações */}
-                  <div className="space-y-2 pt-4 border-t border-slate-700">
-                    <button
-                      onClick={handleTestGitHubConnection}
-                      disabled={gitHubStatus === 'loading' || !gitHubConfig.token}
-                      className="w-full px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Github size={16} />
-                      Testar Conexão
-                    </button>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={handleGitHubPull}
-                        disabled={gitHubStatus === 'loading' || !gitHubConfig.token || !gitHubConfig.owner || !gitHubConfig.repo}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors flex items-center justify-center gap-2"
-                      >
-                        <DownloadIcon size={16} />
-                        Pull
-                      </button>
-
-                      <button
-                        onClick={handleGitHubPush}
-                        disabled={gitHubStatus === 'loading' || !gitHubConfig.token || !gitHubConfig.owner || !gitHubConfig.repo || mdFiles.length === 0}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Upload size={16} />
-                        Push
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Informações */}
-                  <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                    <p className="text-xs text-slate-400 mb-2">
-                      <strong className="text-slate-300">Pull:</strong> Baixa arquivos .md do repositório GitHub
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      <strong className="text-slate-300">Push:</strong> Envia os arquivos .md atuais para o GitHub
-                    </p>
-                  </div>
-                </div>
-                <DrawerFooter>
-                  <DrawerClose asChild>
-                    <Button variant="outline" className="w-full">
-                      Fechar
-                    </Button>
-                  </DrawerClose>
-                </DrawerFooter>
-              </DrawerContent>
-            </Drawer>
+            <button
+              className="group px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white border border-slate-700/50"
+              onClick={() => setShowGitHubModal(true)}
+              title="GitHub (Pull/Push)"
+            >
+              <Github
+                size={16}
+                className="transition-transform group-hover:scale-110"
+              />
+              <span className="text-sm font-medium">GitHub</span>
+            </button>
 
             {/* Botão de Ajuda */}
             <button
@@ -2787,6 +2509,14 @@ Comece a digitar seu conteúdo em Markdown aqui...
           height: auto;
         }
       `}</style>
+
+      {/* GitHub Integration Modal */}
+      <GitHubIntegrationModal
+        isOpen={showGitHubModal}
+        onClose={() => setShowGitHubModal(false)}
+        onFilesLoaded={handleGitHubFilesLoaded}
+        currentFiles={getCurrentFiles()}
+      />
     </div>
   );
 }
