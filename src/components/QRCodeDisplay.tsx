@@ -31,10 +31,22 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   });
 
   useEffect(() => {
+    if (!sessionId) {
+      console.warn('⚠️ SessionId não disponível ainda');
+      setIsLoading(true);
+      return;
+    }
+
     const generateQR = async () => {
-      if (!canvasRef.current || !sessionId) {
-        console.warn('⚠️ Canvas ou sessionId não disponível');
-        setIsLoading(false);
+      // Verificar novamente se o canvas está disponível
+      if (!canvasRef.current) {
+        console.warn('⚠️ Canvas não disponível, tentando novamente...');
+        // Tentar novamente após um pequeno delay
+        setTimeout(() => {
+          if (canvasRef.current && sessionId) {
+            generateQR();
+          }
+        }, 200);
         return;
       }
 
@@ -47,7 +59,10 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
         originalUrl: qrUrl,
         finalUrl: urlToUse,
         sessionId: sessionId,
-        origin: baseUrl
+        origin: baseUrl,
+        hasCanvas: !!canvasRef.current,
+        canvasWidth: canvasRef.current?.width,
+        canvasHeight: canvasRef.current?.height
       });
       
       setFinalUrl(urlToUse);
@@ -63,11 +78,12 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
         setIsLoading(true);
         
         // Limpar canvas antes de gerar
-        if (canvasRef.current) {
-          const ctx = canvasRef.current.getContext('2d');
-          if (ctx) {
-            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          }
+        const ctx = canvasRef.current.getContext('2d');
+        if (ctx) {
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          // Preencher com branco
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         }
         
         await QRCode.toCanvas(canvasRef.current, urlToUse, {
@@ -82,9 +98,9 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
         
         console.log('✅ QR Code gerado com sucesso para:', urlToUse);
         console.log('📐 Canvas dimensions:', {
-          width: canvasRef.current?.width,
-          height: canvasRef.current?.height,
-          display: window.getComputedStyle(canvasRef.current!).display
+          width: canvasRef.current.width,
+          height: canvasRef.current.height,
+          display: window.getComputedStyle(canvasRef.current).display
         });
         setIsLoading(false);
       } catch (error) {
@@ -94,10 +110,10 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
       }
     };
 
-    // Pequeno delay para garantir que o canvas está renderizado
+    // Aguardar um pouco mais para garantir que o canvas está renderizado
     const timer = setTimeout(() => {
       generateQR();
-    }, 100);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [qrUrl, sessionId]);
@@ -157,28 +173,35 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
 
         {/* QR Code */}
         <div className="bg-white rounded-2xl p-4 mb-6 flex flex-col items-center">
-          {isLoading ? (
-            <div className="w-[200px] h-[200px] bg-slate-100 animate-pulse rounded-lg flex items-center justify-center">
-              <QrCode className="text-slate-400" size={48} />
-            </div>
-          ) : (
-            <>
-              <canvas
-                ref={canvasRef}
-                width={200}
-                height={200}
-                className="rounded-lg shadow-sm"
-                style={{ display: 'block', maxWidth: '100%', height: 'auto' }}
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={testUrl}
-                className="mt-3 border-violet-500 hover:border-violet-400 text-violet-400 hover:text-violet-300 text-xs"
-              >
-                🔗 Testar URL
-              </Button>
-            </>
+          <div className="relative w-[200px] h-[200px]">
+            {isLoading && (
+              <div className="absolute inset-0 bg-slate-100 animate-pulse rounded-lg flex items-center justify-center z-10">
+                <QrCode className="text-slate-400" size={48} />
+              </div>
+            )}
+            <canvas
+              ref={canvasRef}
+              width={200}
+              height={200}
+              className="rounded-lg shadow-sm"
+              style={{ 
+                display: 'block', 
+                maxWidth: '100%', 
+                height: 'auto',
+                opacity: isLoading ? 0 : 1,
+                transition: 'opacity 0.3s'
+              }}
+            />
+          </div>
+          {!isLoading && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={testUrl}
+              className="mt-3 border-violet-500 hover:border-violet-400 text-violet-400 hover:text-violet-300 text-xs"
+            >
+              🔗 Testar URL
+            </Button>
           )}
         </div>
 
