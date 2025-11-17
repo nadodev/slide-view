@@ -9,7 +9,7 @@ interface PresentationSession {
 }
 
 interface RemoteCommand {
-  command: 'next' | 'previous' | 'goto' | 'scroll' | 'scroll-sync';
+  command: 'next' | 'previous' | 'goto' | 'scroll' | 'scroll-sync' | 'presenter' | 'focus';
   slideIndex?: number;
   scrollDirection?: 'up' | 'down';
   scrollPosition?: number;
@@ -185,11 +185,14 @@ export const useSocket = (): UseSocketReturn => {
 
   const updateSlide = (currentSlide: number, totalSlides: number) => {
     if (socketRef.current && session) {
+      console.log('📡 useSocket - Enviando update-presentation:', { sessionId: session.sessionId, currentSlide, totalSlides });
       socketRef.current.emit('update-presentation', {
         sessionId: session.sessionId,
         currentSlide,
         totalSlides,
       });
+    } else {
+      console.warn('❌ useSocket - updateSlide ignorado:', { hasSocket: !!socketRef.current, hasSession: !!session });
     }
   };
 

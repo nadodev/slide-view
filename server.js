@@ -210,7 +210,7 @@ io.on('connection', (socket) => {
     } else if (command === 'previous') {
       presentation.currentSlide = Math.max(presentation.currentSlide - 1, 0);
     }
-    // Para scroll, não alteramos currentSlide - apenas passamos o comando
+    // Para scroll, presenter, focus não alteramos currentSlide - apenas passamos o comando
 
     console.log('Enviando comando para host:', presentation.hostSocket);
 
@@ -223,7 +223,7 @@ io.on('connection', (socket) => {
     });
 
     // Sincronizar com outros remotes apenas para navegação de slides
-    if (command !== 'scroll') {
+    if (command !== 'scroll' && command !== 'presenter' && command !== 'focus') {
       socket.to(`presentation-${sessionId}`).emit('sync-slide', {
         currentSlide: presentation.currentSlide,
         totalSlides: presentation.totalSlides

@@ -95,9 +95,16 @@ export const RemoteControl: React.FC = () => {
       // Juntar-se à sessão
       socketConnection.emit('join-remote', sessionId, (response: any) => {
         console.log('Resposta join-remote:', response);
+        console.log('currentSlide recebido:', response?.currentSlide);
+        console.log('totalSlides recebido:', response?.totalSlides);
+        
         if (response?.success) {
-          setCurrentSlide(response.currentSlide);
-          setTotalSlides(response.totalSlides);
+          console.log('🎯 Atualizando estado do controle remoto:', {
+            currentSlide: response.currentSlide,
+            totalSlides: response.totalSlides
+          });
+          setCurrentSlide(response.currentSlide || 0);
+          setTotalSlides(response.totalSlides || 0);
           toast.success('Conectado!', {
             description: 'Controle remoto ativo'
           });
@@ -130,8 +137,10 @@ export const RemoteControl: React.FC = () => {
     });
 
     socketConnection.on('sync-slide', ({ currentSlide: newSlide, totalSlides: newTotal }) => {
+      console.log('📍 sync-slide recebido:', { newSlide, newTotal, currentSlideAtual: currentSlide });
       setCurrentSlide(newSlide);
       setTotalSlides(newTotal);
+      console.log('📍 Estado atualizado para:', { currentSlide: newSlide, totalSlides: newTotal });
     });
 
     socketConnection.on('presentation-content', ({ content, scrollPosition: newScrollPos }) => {
@@ -196,7 +205,7 @@ export const RemoteControl: React.FC = () => {
     });
   };
 
-  const sendCommand = (command: 'next' | 'previous' | 'goto' | 'scroll', slideIndex?: number, scrollDirection?: 'up' | 'down') => {
+  const sendCommand = (command: 'next' | 'previous' | 'goto' | 'scroll' | 'presenter' | 'focus', slideIndex?: number, scrollDirection?: 'up' | 'down') => {
     console.log('RemoteControl - Enviando comando:', { command, slideIndex, scrollDirection });
     
     if (!socket || !isConnected) {
@@ -218,7 +227,9 @@ export const RemoteControl: React.FC = () => {
       next: 'Próximo slide',
       previous: 'Slide anterior',
       goto: `Indo para slide ${(slideIndex || 0) + 1}`,
-      scroll: scrollDirection === 'up' ? 'Rolando para cima' : 'Rolando para baixo'
+      scroll: scrollDirection === 'up' ? 'Rolando para cima' : 'Rolando para baixo',
+      presenter: 'Modo apresentação ativado',
+      focus: 'Modo foco ativado'
     };
 
     toast.success(commandMessages[command]);
@@ -312,34 +323,167 @@ export const RemoteControl: React.FC = () => {
           )}
 
           {/* Espelho da Apresentação */}
-          <div className="bg-slate-800/50 rounded-xl p-3 mb-6">
-            <h3 className="text-slate-300 text-sm font-medium mb-3">📺 Espelho da Apresentação:</h3>
+          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-2xl p-4 mb-6 border border-slate-700/50">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-slate-200 font-semibold flex items-center gap-2">
+                <span className="text-lg">📺</span>
+                Espelho da Apresentação
+              </h3>
+              <div className="text-xs text-slate-400 bg-slate-800/50 px-2 py-1 rounded">
+                {currentSlide + 1} / {totalSlides}
+              </div>
+            </div>
+            
             <div 
               ref={mirrorRef}
-              className="bg-white rounded-lg h-48 overflow-y-auto border border-slate-600"
-              onScroll={(e) => {
-                const target = e.target as HTMLDivElement;
-                sendScrollSync(target.scrollTop);
-              }}
+              className="bg-white rounded-xl shadow-lg border-2 border-slate-600/30 overflow-hidden"
+              style={{ height: '300px' }}
             >
               {presentationContent ? (
-                <div 
-                  className="p-4 text-black text-xs leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: presentationContent }}
-                />
+                <div className="h-full overflow-y-auto">
+                  <div 
+                    className="presentation-mirror p-6 text-gray-800 leading-relaxed"
+                    style={{
+                      fontSize: '11px',
+                      lineHeight: '1.5',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                    }}
+                    dangerouslySetInnerHTML={{ __html: presentationContent }}
+                    onScroll={(e) => {
+                      const target = e.target as HTMLDivElement;
+                      sendScrollSync(target.scrollTop);
+                    }}
+                  />
+                  <style dangerouslySetInnerHTML={{
+                    __html: `
+                      .presentation-mirror h1 {
+                        font-size: 16px !important;
+                        font-weight: 700 !important;
+                        margin: 1em 0 0.5em 0 !important;
+                        color: #1f2937 !important;
+                        border-bottom: 2px solid #e5e7eb !important;
+                        padding-bottom: 0.3em !important;
+                      }
+                      
+                      .presentation-mirror h2 {
+                        font-size: 14px !important;
+                        font-weight: 600 !important;
+                        margin: 0.8em 0 0.4em 0 !important;
+                        color: #374151 !important;
+                      }
+                      
+                      .presentation-mirror h3 {
+                        font-size: 12px !important;
+                        font-weight: 600 !important;
+                        margin: 0.6em 0 0.3em 0 !important;
+                        color: #4b5563 !important;
+                      }
+                      
+                      .presentation-mirror p {
+                        margin: 0.5em 0 !important;
+                        color: #6b7280 !important;
+                        line-height: 1.6 !important;
+                      }
+                      
+                      .presentation-mirror ul, .presentation-mirror ol {
+                        margin: 0.5em 0 0.5em 1.5em !important;
+                        color: #6b7280 !important;
+                      }
+                      
+                      .presentation-mirror li {
+                        margin: 0.2em 0 !important;
+                      }
+                      
+                      .presentation-mirror code {
+                        background-color: #f3f4f6 !important;
+                        padding: 0.1em 0.3em !important;
+                        border-radius: 0.25rem !important;
+                        font-family: 'Consolas', 'Monaco', monospace !important;
+                        font-size: 10px !important;
+                        color: #dc2626 !important;
+                      }
+                      
+                      .presentation-mirror pre {
+                        background-color: #1f2937 !important;
+                        color: #f9fafb !important;
+                        padding: 0.8em !important;
+                        border-radius: 0.5rem !important;
+                        margin: 0.5em 0 !important;
+                        overflow-x: auto !important;
+                        font-size: 9px !important;
+                      }
+                      
+                      .presentation-mirror blockquote {
+                        border-left: 4px solid #6366f1 !important;
+                        margin: 0.5em 0 !important;
+                        padding-left: 1em !important;
+                        color: #6366f1 !important;
+                        font-style: italic !important;
+                      }
+                      
+                      .presentation-mirror strong {
+                        font-weight: 700 !important;
+                        color: #1f2937 !important;
+                      }
+                      
+                      .presentation-mirror em {
+                        font-style: italic !important;
+                        color: #374151 !important;
+                      }
+                      
+                      .presentation-mirror table {
+                        width: 100% !important;
+                        border-collapse: collapse !important;
+                        margin: 0.5em 0 !important;
+                        font-size: 10px !important;
+                      }
+                      
+                      .presentation-mirror th, .presentation-mirror td {
+                        border: 1px solid #e5e7eb !important;
+                        padding: 0.3em 0.5em !important;
+                        text-align: left !important;
+                      }
+                      
+                      .presentation-mirror th {
+                        background-color: #f9fafb !important;
+                        font-weight: 600 !important;
+                        color: #1f2937 !important;
+                      }
+                    `
+                  }} />
+                </div>
               ) : (
-                <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+                <div className="flex items-center justify-center h-full bg-gray-50">
                   <div className="text-center">
-                    <Smartphone className="mx-auto mb-2" size={32} />
-                    <p>Carregando conteúdo...</p>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-3"></div>
+                    <p className="text-gray-500 text-sm font-medium">Carregando apresentação...</p>
+                    <p className="text-gray-400 text-xs mt-1">Aguarde a sincronização</p>
                   </div>
                 </div>
               )}
             </div>
-            <p className="text-slate-500 text-xs mt-2">
-              💡 Role aqui para controlar a apresentação
-            </p>
+            
+            <div className="mt-3 flex items-center justify-between">
+              <p className="text-slate-400 text-xs flex items-center gap-2">
+                <span className="animate-pulse">👆</span>
+                Role na área acima para controlar a apresentação
+              </p>
+              <div className="flex items-center gap-2 text-xs">
+                {isConnected ? (
+                  <>
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-green-400">Conectado</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                    <span className="text-red-400">Desconectado</span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
+
         </div>
 
         {/* Controls */}
@@ -420,6 +564,38 @@ export const RemoteControl: React.FC = () => {
               >
                 <ChevronDown size={24} />
                 <span className="text-xs">Rolar ↓</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Atalhos Especiais */}
+          <div className="mt-6">
+            <h3 className="text-slate-300 text-sm font-medium mb-3">⌨️ Atalhos Especiais:</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                onClick={() => {
+                  console.log('Botão Presenter Mode clicado!');
+                  sendCommand('presenter');
+                }}
+                disabled={!isConnected}
+                size="lg"
+                className="h-14 bg-purple-800 hover:bg-purple-700 border border-purple-600 flex flex-col items-center gap-1"
+              >
+                <Play size={20} />
+                <span className="text-xs">Apresentar (P)</span>
+              </Button>
+
+              <Button
+                onClick={() => {
+                  console.log('Botão Focus Mode clicado!');
+                  sendCommand('focus');
+                }}
+                disabled={!isConnected}
+                size="lg"
+                className="h-14 bg-amber-800 hover:bg-amber-700 border border-amber-600 flex flex-col items-center gap-1"
+              >
+                <QrCode size={20} />
+                <span className="text-xs">Foco (F)</span>
               </Button>
             </div>
           </div>

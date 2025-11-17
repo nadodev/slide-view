@@ -16,6 +16,7 @@ import SlidesWorkspace from "./presentation/SlidesWorkspace";
 import { useSocket } from "../hooks/useSocket";
 import { QRCodeDisplay } from "./QRCodeDisplay";
 import { RemoteControlModal } from "./RemoteControlModal";
+import { toast } from "sonner";
 
 const Presentation = () => {
   const location = useLocation();
@@ -112,6 +113,18 @@ const Presentation = () => {
           top: command.scrollPosition,
           behavior: 'smooth'
         });
+      } else if (command.command === 'presenter') {
+        console.log('Ativando modo apresentação');
+        setPresenterMode(true);
+        toast.success('Modo Apresentação', {
+          description: 'Ativado via controle remoto'
+        });
+      } else if (command.command === 'focus') {
+        console.log('Ativando modo foco');
+        setFocusMode(true);
+        toast.success('Modo Foco', {
+          description: 'Ativado via controle remoto'
+        });
       }
       
       // Update transition for smooth slide change (except for scroll)
@@ -124,6 +137,7 @@ const Presentation = () => {
   // Update remote clients when slide changes
   useEffect(() => {
     if (session && slides.length > 0) {
+      console.log('📡 Presentation - Enviando updateSlide:', { currentSlide, totalSlides: slides.length });
       updateSlide(currentSlide, slides.length);
     }
   }, [session, currentSlide, slides.length, updateSlide]);
@@ -137,15 +151,15 @@ const Presentation = () => {
         let presentationElement = slideContentRef.current?.parentElement;
         
         if (!presentationElement) {
-          presentationElement = document.querySelector('.slide-content');
+          presentationElement = document.querySelector('.slide-content') as HTMLElement;
         }
         
         if (!presentationElement) {
-          presentationElement = document.querySelector('[data-slide-content]');
+          presentationElement = document.querySelector('[data-slide-content]') as HTMLElement;
         }
         
         if (!presentationElement) {
-          presentationElement = document.querySelector('main');
+          presentationElement = document.querySelector('main') as HTMLElement;
         }
         
         if (!presentationElement) {
