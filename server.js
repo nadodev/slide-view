@@ -338,8 +338,19 @@ app.post('/api/auth/github/token', async (req, res) => {
   try {
     const { code } = req.body;
     
+    console.log('GitHub OAuth request received:', {
+      hasCode: !!code,
+      clientId: process.env.GITHUB_CLIENT_ID?.substring(0, 8) + '...',
+      hasSecret: !!process.env.GITHUB_CLIENT_SECRET
+    });
+    
     if (!code) {
       return res.status(400).json({ error: 'Authorization code required' });
+    }
+
+    if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+      console.error('Missing GitHub OAuth environment variables');
+      return res.status(500).json({ error: 'Server configuration error' });
     }
 
     // Trocar code por access token
@@ -351,19 +362,25 @@ app.post('/api/auth/github/token', async (req, res) => {
         'User-Agent': 'SlideView-App',
       },
       body: JSON.stringify({
-        client_id: process.env.VITE_GITHUB_CLIENT_ID,
-        client_secret: process.env.VITE_GITHUB_CLIENT_SECRET,
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
         code,
       }),
     });
 
+    console.log('GitHub token response status:', tokenResponse.status);
+
     if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('GitHub API error:', errorText);
       throw new Error('Failed to exchange code for token');
     }
 
     const tokenData = await tokenResponse.json();
+    console.log('Token exchange successful:', { hasToken: !!tokenData.access_token });
 
     if (tokenData.error) {
+      console.error('GitHub OAuth error:', tokenData);
       throw new Error(tokenData.error_description || tokenData.error);
     }
 
