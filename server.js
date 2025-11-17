@@ -203,16 +203,32 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Catch-all handler: send back React's index.html file for client-side routing
-app.get('/*', (req, res) => {
+// Rotas específicas para React Router (SPA)
+app.get('/', (req, res) => {
   const indexPath = path.join(__dirname, 'dist', 'index.html');
-  console.log('Serving index.html from:', indexPath);
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      console.error('Erro ao servir index.html:', err);
-      res.status(500).send('Erro interno do servidor');
-    }
-  });
+  res.sendFile(indexPath);
+});
+
+app.get('/app', (req, res) => {
+  const indexPath = path.join(__dirname, 'dist', 'index.html');
+  res.sendFile(indexPath);
+});
+
+app.get('/landing', (req, res) => {
+  const indexPath = path.join(__dirname, 'dist', 'index.html');
+  res.sendFile(indexPath);
+});
+
+app.get('/remote/:sessionId', (req, res) => {
+  const indexPath = path.join(__dirname, 'dist', 'index.html');
+  res.sendFile(indexPath);
+});
+
+// Fallback para outras rotas (sem usar catch-all)
+app.use((req, res) => {
+  const indexPath = path.join(__dirname, 'dist', 'index.html');
+  console.log('Serving fallback index.html for:', req.path);
+  res.sendFile(indexPath);
 });
 
 const PORT = process.env.PORT || 3001;
