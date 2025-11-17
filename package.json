@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:server": "npm run build && npm run copy:files",
-    "copy:files": "node -e \"const fs=require('fs'),path=require('path'); if(!fs.existsSync('dist'))fs.mkdirSync('dist'); fs.copyFileSync('server.js','dist/server.js'); const pkg=JSON.parse(fs.readFileSync('package.json')); const prodPkg={name:pkg.name,version:pkg.version,type:'module',scripts:{start:'node server.js'},dependencies:{'express':pkg.dependencies.express,'socket.io':pkg.dependencies['socket.io'],'uuid':pkg.dependencies.uuid,'dotenv':pkg.dependencies.dotenv}}; fs.writeFileSync('dist/package.json',JSON.stringify(prodPkg,null,2));\"",
+    "copy:files": "node scripts/copy-production-files.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node server.js",
