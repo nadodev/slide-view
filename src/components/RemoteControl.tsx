@@ -399,7 +399,7 @@ export const RemoteControl: React.FC = () => {
               <Button
                 onClick={() => {
                   console.log('Botão scroll UP clicado!');
-                  sendCommand('scroll', undefined, 'up');
+                  sendCommand('scroll', currentSlide, 'up');
                 }}
                 disabled={!isConnected}
                 size="lg"
@@ -412,7 +412,7 @@ export const RemoteControl: React.FC = () => {
               <Button
                 onClick={() => {
                   console.log('Botão scroll DOWN clicado!');
-                  sendCommand('scroll', undefined, 'down');
+                  sendCommand('scroll', currentSlide, 'down');
                 }}
                 disabled={!isConnected}
                 size="lg"

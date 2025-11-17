@@ -146,20 +146,32 @@ io.on('connection', (socket) => {
   // Receber conteúdo da apresentação do host
   socket.on('share-presentation-content', (sessionId, content) => {
     console.log('📤 Host compartilhando conteúdo da sessão:', sessionId);
+    console.log('📦 Tamanho do conteúdo recebido:', content.length, 'chars');
+    
     const presentation = presentations.get(sessionId);
     
     if (presentation && presentation.hostSocket === socket.id) {
       presentation.content = content;
       presentation.lastUpdated = new Date();
       console.log('✅ Conteúdo salvo para sessão:', sessionId);
+      console.log('📊 Remote clients conectados:', presentation.remoteClients.length);
       
       // Enviar conteúdo atualizado para todos os controles remotos conectados
-      socket.to(`presentation-${sessionId}`).emit('presentation-content', {
+      const broadcastData = {
         content: content,
         scrollPosition: presentation.scrollPosition || 0
-      });
+      };
+      
+      socket.to(`presentation-${sessionId}`).emit('presentation-content', broadcastData);
+      console.log('📡 Conteúdo enviado para controles remotos');
     } else {
-      console.log('❌ Tentativa inválida de compartilhar conteúdo:', sessionId);
+      console.log('❌ Tentativa inválida de compartilhar conteúdo:', {
+        sessionId,
+        presentation: !!presentation,
+        isCorrectHost: presentation ? presentation.hostSocket === socket.id : false,
+        hostSocket: presentation?.hostSocket,
+        currentSocket: socket.id
+      });
     }
   });
 

@@ -131,18 +131,42 @@ const Presentation = () => {
   // Share presentation content with remote clients
   useEffect(() => {
     if (session && slides.length > 0) {
-      // Capturar todo o conteúdo HTML da apresentação
-      const presentationElement = slideContentRef.current?.parentElement || document.querySelector('.slide-content');
-      if (presentationElement) {
-        // Aguardar um momento para garantir que o DOM foi atualizado
-        setTimeout(() => {
+      // Aguardar um momento para garantir que o DOM foi atualizado
+      setTimeout(() => {
+        // Tentar múltiplas formas de capturar o conteúdo
+        let presentationElement = slideContentRef.current?.parentElement;
+        
+        if (!presentationElement) {
+          presentationElement = document.querySelector('.slide-content');
+        }
+        
+        if (!presentationElement) {
+          presentationElement = document.querySelector('[data-slide-content]');
+        }
+        
+        if (!presentationElement) {
+          presentationElement = document.querySelector('main');
+        }
+        
+        if (!presentationElement) {
+          presentationElement = document.body;
+        }
+        
+        if (presentationElement) {
           const contentHtml = presentationElement.innerHTML;
           const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
           
           // Extrair também o conteúdo markdown dos slides para o controle remoto
           const slidesContent = slides.map(slide => slide.content).join('\n\n---\n\n');
           
-          console.log('📤 Compartilhando conteúdo da apresentação...');
+          console.log('📤 Compartilhando conteúdo da apresentação...', {
+            elementFound: !!presentationElement,
+            elementTag: presentationElement.tagName,
+            contentLength: contentHtml.length,
+            currentSlide,
+            totalSlides: slides.length
+          });
+          
           shareContent(JSON.stringify({
             html: contentHtml,
             markdown: slidesContent,
@@ -150,8 +174,10 @@ const Presentation = () => {
             totalSlides: slides.length,
             scrollPosition
           }));
-        }, 100);
-      }
+        } else {
+          console.warn('❌ Não foi possível encontrar elemento da apresentação para compartilhar');
+        }
+      }, 500); // Aumentar delay para 500ms
     }
   }, [session, slides, currentSlide, shareContent]);
 
