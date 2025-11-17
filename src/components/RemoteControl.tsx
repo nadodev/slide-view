@@ -72,18 +72,32 @@ export const RemoteControl: React.FC = () => {
       // No Railway, usar a mesma URL base
       apiUrl = window.location.origin;
       console.log('Railway detectado, usando:', apiUrl);
+    } else if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
+      // No desenvolvimento local, usar porta específica do servidor
+      apiUrl = 'http://localhost:3001';
+      console.log('Desenvolvimento local detectado, usando:', apiUrl);
     } else {
-      // Fallback para desenvolvimento ou outras plataformas
-      apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      // Fallback para outras plataformas
+      apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
       console.log('Usando URL configurada:', apiUrl);
     }
 
     console.log('Tentando conectar Socket.IO em:', apiUrl);
 
+    // Verificar se é ambiente de desenvolvimento e mostrar aviso
+    if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
+      toast.info('Modo Desenvolvimento', {
+        description: 'Certifique-se que o servidor está rodando na porta 3001'
+      });
+    }
+
     // Conectar ao servidor
     const socketConnection = io(apiUrl, {
       transports: ['websocket', 'polling'],
       timeout: 10000,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     socketConnection.on('connect', () => {

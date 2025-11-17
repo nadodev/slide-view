@@ -97,16 +97,32 @@ const Presentation = () => {
       } else if (command.command === 'goto' && command.slideIndex !== undefined) {
         setCurrentSlide(Math.max(0, Math.min(command.slideIndex, slides.length - 1)));
       } else if (command.command === 'scroll' && command.scrollDirection) {
-        console.log('Executando scroll:', command.scrollDirection);
-        // Scroll da apresentação
-        const scrollAmount = 150; // pixels
-        const direction = command.scrollDirection === 'up' ? -scrollAmount : scrollAmount;
+        console.log('🖱️ Executando scroll:', command.scrollDirection);
+        console.log('📍 Posição atual da janela:', window.pageYOffset);
         
-        console.log('Scrolling by:', direction, 'pixels');
-        window.scrollBy({
-          top: direction,
+        // Scroll da apresentação
+        const scrollAmount = 200; // Aumentar para 200 pixels
+        const direction = command.scrollDirection === 'up' ? -scrollAmount : scrollAmount;
+        const currentPosition = window.pageYOffset;
+        const newPosition = Math.max(0, currentPosition + direction);
+        
+        console.log('📊 Scroll details:', {
+          scrollAmount,
+          direction,
+          currentPosition,
+          newPosition
+        });
+        
+        // Usar scrollTo ao invés de scrollBy para ser mais preciso
+        window.scrollTo({
+          top: newPosition,
           behavior: 'smooth'
         });
+        
+        // Verificar se realmente rolou após um tempo
+        setTimeout(() => {
+          console.log('📍 Nova posição após scroll:', window.pageYOffset);
+        }, 500);
       } else if (command.command === 'scroll-sync' && command.scrollPosition !== undefined) {
         console.log('Sincronizando scroll para posição:', command.scrollPosition);
         window.scrollTo({

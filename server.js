@@ -177,17 +177,20 @@ io.on('connection', (socket) => {
 
   // Comandos de navegação do controle remoto
   socket.on('remote-command', ({ sessionId, command, slideIndex, scrollDirection, scrollPosition }) => {
-    console.log('Servidor - Comando recebido:', { sessionId, command, slideIndex, scrollDirection, scrollPosition });
+    console.log('🎮 Servidor - Comando recebido:', { sessionId, command, slideIndex, scrollDirection, scrollPosition });
     
     const presentation = presentations.get(sessionId);
     
     if (!presentation || !presentation.remoteClients.includes(socket.id)) {
-      console.log('Sessão não encontrada ou cliente não autorizado');
+      console.log('❌ Sessão não encontrada ou cliente não autorizado');
       return;
     }
 
+    console.log('✅ Sessão válida, processando comando:', command);
+
     // Processar comandos de scroll sincronizado
     if (command === 'scroll-sync') {
+      console.log('📱 Processando scroll-sync para host:', presentation.hostSocket);
       // Enviar comando de scroll para o host
       socket.to(presentation.hostSocket).emit('remote-command', {
         command: 'scroll-sync',
@@ -212,7 +215,7 @@ io.on('connection', (socket) => {
     }
     // Para scroll, presenter, focus não alteramos currentSlide - apenas passamos o comando
 
-    console.log('Enviando comando para host:', presentation.hostSocket);
+    console.log('📡 Enviando comando para host:', presentation.hostSocket);
 
     // Enviar comando para o host
     socket.to(presentation.hostSocket).emit('remote-command', {
@@ -221,6 +224,10 @@ io.on('connection', (socket) => {
       scrollDirection,
       fromClient: socket.id
     });
+
+    if (command === 'scroll') {
+      console.log(`🖱️ Comando de scroll ${scrollDirection} enviado para host`);
+    }
 
     // Sincronizar com outros remotes apenas para navegação de slides
     if (command !== 'scroll' && command !== 'presenter' && command !== 'focus') {
