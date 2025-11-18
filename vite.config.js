@@ -8,7 +8,14 @@ export default defineConfig({
   server: {
     allowedHosts: [
       "003c6b022a11.ngrok-free.app"
-    ]
+    ],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
   build: {
     chunkSizeWarningLimit: 1000,

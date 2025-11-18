@@ -9,21 +9,26 @@ import os from 'os';
 
 // Carregar variáveis de ambiente
 // Detectar se está no Railway ou outro ambiente
-const isRailway = process.env.RAILWAY_ENVIRONMENT;
-const isDevelopment = process.env.NODE_ENV !== 'production';
+const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_PROJECT_ID;
+const isDevelopment = process.env.NODE_ENV !== 'production' && !isRailway;
 
 if (isRailway) {
+  console.log('📡 Detected Railway environment, loading .env.railway');
   dotenv.config({ path: '.env.railway' });
 } else if (isDevelopment) {
+  console.log('🔧 Development environment, loading .env');
   dotenv.config({ path: '.env' });
 } else {
+  console.log('🚀 Production environment, loading .env.production');
   dotenv.config({ path: '.env.production' });
 }
 
 console.log('Environment:', { 
   NODE_ENV: process.env.NODE_ENV,
   RAILWAY: isRailway ? 'YES' : 'NO',
-  PORT: process.env.PORT 
+  PORT: process.env.PORT,
+  HAS_GITHUB_CLIENT_ID: !!process.env.GITHUB_CLIENT_ID,
+  HAS_GITHUB_CLIENT_SECRET: !!process.env.GITHUB_CLIENT_SECRET
 });
 
 const __filename = fileURLToPath(import.meta.url);
