@@ -58,55 +58,55 @@ export default function SlideViewer({
 
         /* Títulos */
         .custom-scroll h1 {
-          font-size: clamp(1.75rem, 3.5vw, 2.6rem);
-          font-weight: 800;
-          color: #ffffff;
-          margin-bottom: 1.5rem;
-          margin-top: 0;
-          line-height: 1.15;
-          letter-spacing: -0.01em;
+          font-size: clamp(1.75rem, 3.5vw, 2.6rem) !important;
+          font-weight: 800 !important;
+          color: #ffffff !important;
+          margin-bottom: 1.5rem !important;
+          margin-top: 0 !important;
+          line-height: 1.15 !important;
+          letter-spacing: -0.01em !important;
         }
 
         .custom-scroll h2 {
-          font-size: clamp(1.5rem, 2.7vw, 2.1rem);
-          font-weight: 700;
-          color: #f9fafb;
-          margin-bottom: 1.25rem;
-          margin-top: 2.5rem;
-          line-height: 1.25;
+          font-size: clamp(1.5rem, 2.7vw, 2.1rem) !important;
+          font-weight: 700 !important;
+          color: #f9fafb !important;
+          margin-bottom: 1.25rem !important;
+          margin-top: 2.5rem !important;
+          line-height: 1.25 !important;
         }
 
         .custom-scroll h3 {
-          font-size: clamp(1.35rem, 2.1vw, 1.7rem);
-          font-weight: 600;
-          color: #e5e7eb;
-          margin-bottom: 1rem;
-          margin-top: 2rem;
-          line-height: 1.3;
+          font-size: clamp(1.35rem, 2.1vw, 1.7rem) !important;
+          font-weight: 600 !important;
+          color: #e5e7eb !important;
+          margin-bottom: 1rem !important;
+          margin-top: 2rem !important;
+          line-height: 1.3 !important;
         }
 
         .custom-scroll h4 {
-          font-size: 1.35rem;
-          font-weight: 600;
-          color: #d1d5db;
-          margin-bottom: 0.85rem;
-          margin-top: 1.75rem;
+          font-size: 1.35rem !important;
+          font-weight: 600 !important;
+          color: #d1d5db !important;
+          margin-bottom: 0.85rem !important;
+          margin-top: 1.75rem !important;
         }
 
         .custom-scroll h5 {
-          font-size: 1.2rem;
-          font-weight: 600;
-          color: #d1d5db;
-          margin-bottom: 0.65rem;
-          margin-top: 1.4rem;
+          font-size: 1.2rem !important;
+          font-weight: 600 !important;
+          color: #d1d5db !important;
+          margin-bottom: 0.65rem !important;
+          margin-top: 1.4rem !important;
         }
 
         .custom-scroll h6 {
-          font-size: 1.05rem;
-          font-weight: 600;
-          color: #9ca3af;
-          margin-bottom: 0.6rem;
-          margin-top: 1.3rem;
+          font-size: 1.05rem !important;
+          font-weight: 600 !important;
+          color: #9ca3af !important;
+          margin-bottom: 0.6rem !important;
+          margin-top: 1.3rem !important;
         }
 
         .custom-scroll h1:first-child,
@@ -128,16 +128,16 @@ export default function SlideViewer({
 
         /* Links */
         .custom-scroll a {
-          color: #60a5fa;
-          text-decoration: underline;
-          text-decoration-color: rgba(96, 165, 250, 0.3);
-          text-underline-offset: 3px;
-          transition: all 0.2s;
+          color: #60a5fa !important;
+          text-decoration: underline !important;
+          text-decoration-color: rgba(96, 165, 250, 0.3) !important;
+          text-underline-offset: 3px !important;
+          transition: all 0.2s !important;
         }
 
         .custom-scroll a:hover {
-          color: #93c5fd;
-          text-decoration-color: rgba(147, 197, 253, 0.6);
+          color: #93c5fd !important;
+          text-decoration-color: rgba(147, 197, 253, 0.6) !important;
         }
 
         /* Listas */
@@ -163,7 +163,7 @@ export default function SlideViewer({
         }
 
         .custom-scroll li::marker {
-          color: #60a5fa;
+          color: #60a5fa !important;
         }
 
         /* Listas aninhadas */
@@ -171,19 +171,19 @@ export default function SlideViewer({
         .custom-scroll ol ul,
         .custom-scroll ul ol,
         .custom-scroll ol ol {
-          margin-top: 0.75rem;
-          margin-bottom: 0.75rem;
+          margin-top: 0.75rem !important;
+          margin-bottom: 0.75rem !important;
         }
 
         /* Código inline */
         .custom-scroll code {
-          background-color: rgba(59, 130, 246, 0.1);
-          color: #93c5fd;
-          padding: 0.25rem 0.5rem;
-          border-radius: 0.375rem;
-          font-size: 0.95em;
-          font-family: "Consolas", "Monaco", "Courier New", monospace;
-          border: 1px solid rgba(59, 130, 246, 0.2);
+          background-color: rgba(59, 130, 246, 0.1) !important;
+          color: #93c5fd !important;
+          padding: 0.25rem 0.5rem !important;
+          border-radius: 0.375rem !important;
+          font-size: 0.95em !important;
+          font-family: "Consolas", "Monaco", "Courier New", monospace !important;
+          border: 1px solid rgba(59, 130, 246, 0.2) !important;
         }
 
         /* Blocos de código */
@@ -277,14 +277,14 @@ export default function SlideViewer({
         /* Ênfase */
         .custom-scroll strong,
         .custom-scroll b {
-          font-weight: 700;
-          color: #ffffff;
+          font-weight: 700 !important;
+          color: #ffffff !important;
         }
 
         .custom-scroll em,
         .custom-scroll i {
-          font-style: italic;
-          color: #e5e7eb;
+          font-style: italic !important;
+          color: #e5e7eb !important;
         }
 
         /* Texto riscado */
