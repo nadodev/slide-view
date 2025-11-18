@@ -167,7 +167,7 @@ export default function PresenterView({
 
         .slide-content h1 {
           color: #ffffff;
-          font-size: 3.5rem;
+          font-size: 3rem;
           font-weight: 800;
           margin: 0 0 2.5rem 0;
           line-height: 1.1;
@@ -177,7 +177,7 @@ export default function PresenterView({
 
         .slide-content h2 {
           color: #e0e7ff;
-          font-size: 2.75rem;
+          font-size: 2.25rem;
           font-weight: 700;
           margin: 3rem 0 2rem 0;
           line-height: 1.2;
@@ -187,7 +187,7 @@ export default function PresenterView({
 
         .slide-content h3 {
           color: #e0e7ff;
-          font-size: 2.25rem;
+          font-size: 2rem;
           font-weight: 600;
           margin: 2.5rem 0 1.5rem 0;
           line-height: 1.3;
