@@ -166,28 +166,23 @@ export default function PresenterView({
         }
 
         .slide-content h1 {
-          background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          color: #ffffff;
           font-size: 4.5rem;
           font-weight: 800;
           margin: 0 0 2.5rem 0;
           line-height: 1.1;
           letter-spacing: -0.02em;
-          text-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+          text-shadow: 0 4px 20px rgba(255, 255, 255, 0.3), 0 0 40px rgba(255, 255, 255, 0.1);
         }
 
         .slide-content h2 {
-          background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          color: #e0e7ff;
           font-size: 3.5rem;
           font-weight: 700;
           margin: 3rem 0 2rem 0;
           line-height: 1.2;
           letter-spacing: -0.01em;
+          text-shadow: 0 2px 15px rgba(224, 231, 255, 0.4);
         }
 
         .slide-content h3 {
