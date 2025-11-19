@@ -63,10 +63,22 @@ export default defineConfig({
     commonjsOptions: {
       include: [/node_modules/],
       transformMixedEsModules: true
-      }
+    }
   },
   // Resolver dependências do React
   resolve: {
-    dedupe: ['react', 'react-dom']
+    dedupe: ['react', 'react-dom'],
+    alias: {
+      '@': '/src',
+      '@/components': '/src/components',
+      '@/features': '/src/features',
+      '@/shared': '/src/shared',
+      '@/services': '/src/services',
+      '@/store': '/src/store',
+      '@/hooks': '/src/hooks',
+      '@/utils': '/src/utils',
+      '@/types': '/src/types',
+      '@/config': '/src/config'
+    }
   }
 })
