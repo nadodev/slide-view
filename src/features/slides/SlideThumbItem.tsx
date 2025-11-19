@@ -1,5 +1,5 @@
 import { Trash2, Trash2Icon, GripVertical } from "lucide-react";
-import type { Slide } from "./types";
+import type { Slide } from "@/types";
 import { Button } from "@/shared/components/ui/button";
 import {
   AlertDialog,

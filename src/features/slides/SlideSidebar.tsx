@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import SlideThumbList from "./SlideThumbList";
-import { Slide } from "./types";
+import { Slide } from "@/types";
 
 type SlideSidebarProps = {
   slides: Slide[];

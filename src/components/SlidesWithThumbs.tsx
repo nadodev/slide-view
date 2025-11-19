@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { useSlideNavigation } from "../hooks/useSlideNavigation";
+import { useSlideNavigation } from "@/hooks/useSlideNavigation";
 import SlideSidebar from "./slides/SlideSidebar";
 import SlideStage from "./slides/SlideStage";
 import SidebarStyles from "./slides/SidebarStyles";

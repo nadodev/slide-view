@@ -44,48 +44,48 @@ export default function UploadArea({
       const msg = `Arquivo inválido: ${invalid.name}. Apenas .md é permitido.`;
       setLocalError(msg);
       toast.error("Arquivo inválido", {
-        description: `${invalid.name} não é um arquivo Markdown válido.`
+        description: `${invalid.name} não é um arquivo Markdown válido.`,
+        position: "top-right",
       });
       if (typeof onFilesChange === "function")
         onFilesChange(null, { error: msg });
       return;
     }
-    
-    // Simular progress de upload
+
     setUploadProgress(0);
     toast.success("Upload iniciado", {
       description: `${files.length} arquivo(s) sendo processado(s)...`,
       position: "top-right",
     });
-    
+
     const progressInterval = setInterval(() => {
       setUploadProgress(prev => {
         const newProgress = prev + 20;
         if (newProgress >= 100) {
           clearInterval(progressInterval);
           toast.success("Upload concluído!", {
-            description: "Arquivos processados com sucesso."
+            description: "Arquivos processados com sucesso.",
+            position: "top-right",
           });
-          setTimeout(() => setUploadProgress(0), 1000); 
+          setTimeout(() => setUploadProgress(0), 1000);
           return 100;
         }
         return newProgress;
       });
     }, 200);
-    
+
     setLocalError("");
     if (typeof onFilesChange === "function") {
-      // If single large file, show interactive split modal first
       if (files.length === 1) {
         try {
           const file = files[0];
           const txt = await file.text();
-          const LARGE_THRESHOLD = 5000; // characters
+          const LARGE_THRESHOLD = 5000;
           if (txt && txt.length > LARGE_THRESHOLD) {
             setModalFilename(file.name);
             setModalContent(txt);
             setShowSplitModal(true);
-            return; // wait for modal confirm
+            return;
           }
         } catch (err) {
           // fallback to normal behavior
@@ -103,13 +103,12 @@ export default function UploadArea({
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    // Só remove o estado de dragging se realmente sair da área
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
-    
+
     if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-    setIsDragging(false);
+      setIsDragging(false);
     }
   };
 
@@ -136,13 +135,15 @@ export default function UploadArea({
     if (!aiPrompt.trim()) {
       setLocalError("Por favor, descreva o que você gostaria de apresentar.");
       toast.error("Prompt necessário", {
-        description: "Descreva o tema da sua apresentação para continuar."
+        description: "Descreva o tema da sua apresentação para continuar.",
+        position: "top-right"
       });
       return;
     }
     setLocalError("");
     toast.success("IA ativada!", {
-      description: `Gerando ${slideCount} slides sobre: ${aiPrompt.slice(0, 50)}...`
+      description: `Gerando ${slideCount} slides sobre: ${aiPrompt.slice(0, 50)}...`,
+      position: "top-right"
     });
     if (onAIGenerate) {
       onAIGenerate(aiPrompt.trim(), slideCount, preserveText ? baseText : undefined);
@@ -153,8 +154,7 @@ export default function UploadArea({
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 md:p-6">
       <div className="w-full max-w-5xl">
-       
-        {/* Header */}
+
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="relative">
@@ -164,7 +164,7 @@ export default function UploadArea({
               </div>
             </div>
             <h1 className="text-4xl md:text-6xl font-black bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">
-              SlideCraft AI
+              MoveSlide
             </h1>
           </div>
           <p className="text-slate-400 text-base md:text-xl font-light max-w-2xl mx-auto">
@@ -172,16 +172,14 @@ export default function UploadArea({
           </p>
         </div>
 
-        {/* Mode Toggle */}
         <div className="flex justify-center mb-8">
           <div className="inline-flex bg-slate-800/50 backdrop-blur-xl rounded-2xl p-1.5 border border-slate-700/50 shadow-2xl">
             <button
               onClick={() => setMode('upload')}
-              className={`relative px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 ${
-                mode === 'upload'
-                  ? 'text-white'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`relative px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 ${mode === 'upload'
+                ? 'text-white'
+                : 'text-slate-400 hover:text-slate-200'
+                }`}
             >
               {mode === 'upload' && (
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl shadow-lg"></div>
@@ -191,11 +189,10 @@ export default function UploadArea({
             </button>
             <button
               onClick={() => setMode('ai')}
-              className={`relative px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 ${
-                mode === 'ai'
-                  ? 'text-white'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+              className={`relative px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 ${mode === 'ai'
+                ? 'text-white'
+                : 'text-slate-400 hover:text-slate-200'
+                }`}
             >
               {mode === 'ai' && (
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-xl shadow-lg"></div>
@@ -215,32 +212,26 @@ export default function UploadArea({
           </div>
         </div>
 
-        {/* Main Card */}
         <div className="relative">
-          {/* Animated Glow */}
-          <div className={`absolute -inset-1 rounded-3xl blur-2xl opacity-20 transition-all duration-500 ${
-            mode === 'ai' 
-              ? 'bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600'
-              : 'bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-600'
-          }`}></div>
-          
+          <div className={`absolute -inset-1 rounded-3xl blur-2xl opacity-20 transition-all duration-500 ${mode === 'ai'
+            ? 'bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600'
+            : 'bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-600'
+            }`}></div>
+
           <div className="relative bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-700/50">
             {mode === 'upload' ? (
-              /* Upload Area */
               <>
                 <div
-                  className={`relative transition-all duration-300 ease-out ${
-                    isDragging
-                      ? "bg-violet-500/10 border-4 border-dashed border-violet-400 rounded-2xl m-4 scale-[1.01] shadow-2xl shadow-violet-500/20"
-                      : "bg-gradient-to-br from-slate-800/40 to-slate-900/40"
-                  }`}
+                  className={`relative transition-all duration-300 ease-out ${isDragging
+                    ? "bg-violet-500/10 border-4 border-dashed border-violet-400 rounded-2xl m-4 scale-[1.01] shadow-2xl shadow-violet-500/20"
+                    : "bg-gradient-to-br from-slate-800/40 to-slate-900/40"
+                    }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                 >
-                  {/* Drag overlay with pattern */}
                   {isDragging && (
-                    <div 
+                    <div
                       className="absolute inset-4 rounded-2xl bg-violet-500/5 border-2 border-dashed border-violet-300/50 flex items-center justify-center z-50 animate-in fade-in-0 zoom-in-95 duration-200"
                       style={{
                         backgroundImage: `
@@ -268,7 +259,7 @@ export default function UploadArea({
                       </div>
                     </div>
                   )}
-                  
+
                   <label className={`block p-12 md:p-16 cursor-pointer ${isDragging ? 'opacity-30' : ''}`}>
                     <input
                       ref={inputRef}
@@ -316,8 +307,8 @@ export default function UploadArea({
                         size="lg"
                         className="group relative px-8 md:px-10 py-3 md:py-4 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-600 hover:from-cyan-600 hover:via-fuchsia-600 hover:to-violet-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-2xl hover:shadow-violet-500/50 transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none overflow-hidden border-0"
                       >
-                          <FileText size={22} />
-                          {loading ? "Processando..." : "Selecionar Arquivos"}
+                        <FileText size={22} />
+                        {loading ? "Processando..." : "Selecionar Arquivos"}
                       </Button>
 
                       {/* Progress Bar */}
@@ -498,15 +489,15 @@ export default function UploadArea({
                         {aiPrompt.length}/500
                       </div>
                     </div>
-                    
+
                     <Button
                       onClick={handleAIGenerate}
                       disabled={loading || !aiPrompt.trim()}
                       size="lg"
                       className="group relative w-full px-10 py-4 bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 hover:from-blue-600 hover:via-cyan-600 hover:to-emerald-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-2xl hover:shadow-emerald-500/50 transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none overflow-hidden border-0"
                     >
-                        <Wand2 size={22} className={loading ? "animate-spin" : ""} />
-                        {loading ? "Gerando slides mágicos..." : "✨ Gerar Apresentação"}
+                      <Wand2 size={22} className={loading ? "animate-spin" : ""} />
+                      {loading ? "Gerando slides mágicos..." : "✨ Gerar Apresentação"}
                     </Button>
                   </div>
 
@@ -542,7 +533,7 @@ export default function UploadArea({
         <div className="mt-6 md:mt-8 text-center">
           <p className="text-slate-500 text-xs md:text-sm flex items-center justify-center gap-2 flex-wrap">
             <span className={mode === 'ai' ? 'text-emerald-400' : 'text-violet-400'}>✨</span>
-            {mode === 'upload' 
+            {mode === 'upload'
               ? 'Arquivos ordenados alfabeticamente • Suporte para múltiplos .md'
               : 'IA generativa • Slides profissionais em segundos'
             }
@@ -552,8 +543,8 @@ export default function UploadArea({
 
       {/* Loading Overlay */}
       {loading && (
-        <Carregando 
-          message={mode === 'ai' ? "Gerando slides com IA..." : "Processando arquivos..."} 
+        <Carregando
+          message={mode === 'ai' ? "Gerando slides com IA..." : "Processando arquivos..."}
           showProgress={true}
         />
       )}

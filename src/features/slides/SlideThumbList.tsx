@@ -1,6 +1,6 @@
 import SlideThumbItem from "./SlideThumbItem";
 import SlideThumbSkeleton from "./SlideThumbSkeleton";
-import { Slide } from "./types";
+import { Slide } from "@/types";
 
 type SlideThumbListProps = {
   slides: Slide[];

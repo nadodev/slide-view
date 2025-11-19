@@ -6,7 +6,7 @@ export { default as UploadArea } from './UploadArea';
 export { default as InteractiveSplitModal } from './InteractiveSplitModal';
 
 // Slide components
-export * from './types';
+export * from "@/types";
 export { default as SlideSidebar } from './SlideSidebar';
 export { default as SlideStage } from './SlideStage';
 export { default as SlideThumbItem } from './SlideThumbItem';
