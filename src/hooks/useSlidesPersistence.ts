@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import parseMarkdownSafe from "../utils/markdown";
-import { Slide } from "../components/slides/types";
+import parseMarkdownSafe from "@/utils/markdown";
+import { Slide } from "@/shared/components/slides/types";
 
 export function useSlidesPersistence(
   slides: Slide[],

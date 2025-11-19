@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import hljs from "highlight.js";
-import { Slide } from "../components/slides/types";
+import { Slide } from "@/shared/components/slides/types";
 
 type RenderingEffectOptions = {
   slides: Slide[];

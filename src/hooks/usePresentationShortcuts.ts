@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Slide } from "../components/slides/types";
+import { Slide } from "@/shared/components/slides/types";
 
 type ShortcutOptions = {
   editing: boolean;

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import generateSlug from '../utils/slug';
+import generateSlug from "@/utils/slug";
 
 
 
@@ -26,7 +26,7 @@ export default function useAnchorNavigation({ location, slides, showSlideList, s
       setTimeout(() => {
         let element = document.getElementById(rawHash) || document.getElementById(rawHash.replace(/^-/, '')) || document.getElementById(normalizedHash) || document.getElementById(normalizedHash.replace(/^-/, ''));
         if (element) {
-          try { element.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
+          try { element.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { }
           return;
         }
 

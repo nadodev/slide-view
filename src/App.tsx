@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LandingPage from './components/LandingPage';
-import Presentation from './components/Presentation';
-import { RemoteControl } from './components/RemoteControl';
-import GitHubAuthCallback from './components/GitHubAuthCallback';
-import { Toaster } from './components/ui/sonner';
+import { LandingPage } from '@/features/landing';
+import { Presentation } from '@/features/presentation';
+import { RemoteControl } from '@/features/remote-control';
+import { GitHubAuthCallback } from '@/features/github';
+import { Toaster } from '@/shared/components/ui';
 import { JSX } from 'react';
 
 export default function App(): JSX.Element {
