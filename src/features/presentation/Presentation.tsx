@@ -18,6 +18,7 @@ import { RemoteControlModal } from "@/features/remote-control/RemoteControlModal
 import { toast } from "sonner";
 
 import { useSlidesStore, usePresentationStore, useUIStore } from "@/store";
+import { RemoteCommand } from "@/types/remote";
 
 function extractNotes(text: string) {
   const notes: string[] = [];
@@ -87,8 +88,6 @@ const Presentation = () => {
 
   const {
     session,
-    isConnecting,
-    error: socketError,
     createPresentation,
     updateSlide,
     shareContent,
@@ -99,62 +98,102 @@ const Presentation = () => {
   } = useSocket();
 
   useEffect(() => {
-    onRemoteCommand((command) => {
-      if (command.command === 'next') {
-        setCurrentSlide(Math.min(currentSlide + 1, slides.length - 1));
-      } else if (command.command === 'previous') {
-        setCurrentSlide(Math.max(currentSlide - 1, 0));
-      } else if (command.command === 'goto' && command.slideIndex !== undefined) {
-        setCurrentSlide(Math.max(0, Math.min(command.slideIndex, slides.length - 1)));
-      } else if (command.command === 'scroll' && command.scrollDirection) {
-        const scrollContainer = presenterMode
-          ? presenterScrollRef.current
-          : slideContentRef.current;
+    const scrollContainer = () =>
+      presenterMode ? presenterScrollRef.current : slideContentRef.current;
 
-        if (!scrollContainer) return;
+    const handlers: Record<string, (cmd: RemoteCommand) => void> = {
+      next: () => {
+        setCurrentSlide((s) => Math.min(s + 1, slides.length - 1));
+      },
+
+      previous: () => {
+        setCurrentSlide((s) => Math.max(s - 1, 0));
+      },
+
+      goto: (cmd) => {
+        if (cmd.slideIndex !== undefined) {
+          setCurrentSlide(
+            Math.max(0, Math.min(cmd.slideIndex, slides.length - 1))
+          );
+        }
+      },
+
+      scroll: (cmd) => {
+        const container = scrollContainer();
+        if (!container || !cmd.scrollDirection) return;
 
         const scrollAmount = 200;
-        const direction = command.scrollDirection === 'up' ? -scrollAmount : scrollAmount;
-        const currentPosition = scrollContainer.scrollTop;
-        const maxScroll = scrollContainer.scrollHeight - scrollContainer.clientHeight;
-        const newPosition = Math.max(0, Math.min(currentPosition + direction, maxScroll));
+        const direction =
+          cmd.scrollDirection === "up" ? -scrollAmount : scrollAmount;
 
-        scrollContainer.scrollTo({
-          top: newPosition,
-          behavior: 'smooth'
-        });
-      } else if (command.command === 'scroll-sync' && command.scrollPosition !== undefined) {
-        const scrollContainer = presenterMode
-          ? presenterScrollRef.current
-          : slideContentRef.current;
+        const newPosition = Math.max(
+          0,
+          Math.min(
+            container.scrollTop + direction,
+            container.scrollHeight - container.clientHeight
+          )
+        );
 
-        if (scrollContainer) {
-          scrollContainer.scrollTo({
-            top: command.scrollPosition,
-            behavior: 'smooth'
+        container.scrollTo({ top: newPosition, behavior: "smooth" });
+      },
+
+      "scroll-sync": (cmd) => {
+        const container = scrollContainer();
+        if (container && cmd.scrollPosition !== undefined) {
+          container.scrollTo({
+            top: cmd.scrollPosition,
+            behavior: "smooth",
           });
         }
-      } else if (command.command === 'presenter') {
-        const toggleValue = (command as any).toggle;
-        const shouldActivate = toggleValue !== undefined ? toggleValue : !presenterMode;
-        setPresenterMode(shouldActivate);
-        toast.success('Modo Apresentação', {
-          description: shouldActivate ? 'Ativado via controle remoto' : 'Desativado via controle remoto'
-        });
-      } else if (command.command === 'focus') {
-        const toggleValue = (command as any).toggle;
-        const shouldActivate = toggleValue !== undefined ? toggleValue : !focusMode;
-        setFocusMode(shouldActivate);
-        toast.success('Modo Foco', {
-          description: shouldActivate ? 'Ativado via controle remoto' : 'Desativado via controle remoto'
-        });
-      }
+      },
 
-      if (command.command !== 'scroll' && command.command !== 'scroll-sync') {
+      presenter: (cmd) => {
+        const toggleValue = (cmd as any).toggle;
+        const shouldActivate =
+          toggleValue !== undefined ? toggleValue : !presenterMode;
+
+        setPresenterMode(shouldActivate);
+
+        toast.success("Modo Apresentação", {
+          description: shouldActivate
+            ? "Ativado via controle remoto"
+            : "Desativado via controle remoto",
+        });
+      },
+
+      focus: (cmd) => {
+        const toggleValue = (cmd as any).toggle;
+        const shouldActivate =
+          toggleValue !== undefined ? toggleValue : !focusMode;
+
+        setFocusMode(shouldActivate);
+
+        toast.success("Modo Foco", {
+          description: shouldActivate
+            ? "Ativado via controle remoto"
+            : "Desativado via controle remoto",
+        });
+      },
+    };
+
+    onRemoteCommand((cmd) => {
+      const handler = handlers[cmd.command];
+      if (handler) handler(cmd);
+
+      if (cmd.command !== "scroll" && cmd.command !== "scroll-sync") {
         incrementTransitionKey();
       }
     });
-  }, [onRemoteCommand, slides.length, currentSlide, presenterMode, focusMode, setCurrentSlide, setPresenterMode, setFocusMode, incrementTransitionKey]);
+  }, [
+    onRemoteCommand,
+    presenterMode,
+    focusMode,
+    slides.length,
+    incrementTransitionKey,
+    setCurrentSlide,
+    setPresenterMode,
+    setFocusMode,
+  ]);
 
   useEffect(() => {
     if (session && slides.length > 0) {
