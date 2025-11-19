@@ -20,10 +20,10 @@ export default function SlideStage({
   slideContentRef,
 }: SlideStageProps) {
   return (
-    <main className="flex flex-1 items-center justify-center overflow-hidden p-6 lg:p-12">
+    <main className="flex flex-1 items-center justify-center overflow-hidden">
       <div
         key={transitionKey}
-        className={`slide-transition slide-transition-${slideTransition} h-full w-full max-w-7xl`}
+        className={`slide-transition slide-transition-${slideTransition} h-full w-full`}
       >
         <SlideViewer
           html={slides[currentSlide]?.html || ""}

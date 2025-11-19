@@ -17,7 +17,7 @@ export default function SlideViewer({
   return (
     <div
       ref={slideContainerRef as any}
-      className="w-full h-full rounded-2xl shadow-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col"
+      className="w-full h-full shadow-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col"
     >
       <div
         ref={slideContentRef as any}
