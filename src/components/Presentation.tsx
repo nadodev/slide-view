@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SlideList from "./SlideList";
 import PresenterView from "./PresenterView";
@@ -6,7 +6,6 @@ import EditPanel from "./EditPanel";
 import useAnchorNavigation from "../hooks/useAnchorNavigation";
 import ScrollTopButton from "./ScrollTopButton";
 import parseMarkdownSafe from "../utils/markdown";
-import { Slide } from "./slides/types";
 import { useSlidesManager } from "../hooks/useSlidesManager";
 import { usePresentationShortcuts } from "../hooks/usePresentationShortcuts";
 import { useSlidesPersistence } from "../hooks/useSlidesPersistence";
@@ -18,7 +17,10 @@ import { QRCodeDisplay } from "./QRCodeDisplay";
 import { RemoteControlModal } from "./RemoteControlModal";
 import { toast } from "sonner";
 
-// Função helper para extrair notas (mesma lógica do useSlidesManager)
+// Zustand stores
+import { useSlidesStore, usePresentationStore, useUIStore } from "@/store";
+
+// Função helper para extrair notas
 function extractNotes(text: string) {
   const notes: string[] = [];
   if (!text) return { clean: "", notes };
@@ -35,58 +37,60 @@ function extractNotes(text: string) {
 const Presentation = () => {
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Zustand stores - Estado global
+  const slides = useSlidesStore((state) => state.slides);
+  const setSlides = useSlidesStore((state) => state.setSlides);
+  const loading = useSlidesStore((state) => state.loading);
+  const error = useSlidesStore((state) => state.error);
+  const setError = useSlidesStore((state) => state.setError);
+  const warning = useSlidesStore((state) => state.warning);
+  const setWarning = useSlidesStore((state) => state.setWarning);
+  const duplicateSlide = useSlidesStore((state) => state.duplicateSlide);
+  const reorderSlides = useSlidesStore((state) => state.reorderSlides);
+  const resetSlides = useSlidesStore((state) => state.resetSlides);
+
+  const currentSlide = usePresentationStore((state) => state.currentSlide);
+  const setCurrentSlide = usePresentationStore((state) => state.setCurrentSlide);
+  const showSlideList = usePresentationStore((state) => state.showSlideList);
+  const setShowSlideList = usePresentationStore((state) => state.setShowSlideList);
+  const presenterMode = usePresentationStore((state) => state.presenterMode);
+  const setPresenterMode = usePresentationStore((state) => state.setPresenterMode);
+  const focusMode = usePresentationStore((state) => state.focusMode);
+  const setFocusMode = usePresentationStore((state) => state.setFocusMode);
+  const highContrast = usePresentationStore((state) => state.highContrast);
+  const setHighContrast = usePresentationStore((state) => state.setHighContrast);
+  const slideTransition = usePresentationStore((state) => state.slideTransition);
+  const setSlideTransition = usePresentationStore((state) => state.setSlideTransition);
+  const editing = usePresentationStore((state) => state.editing);
+  const setEditing = usePresentationStore((state) => state.setEditing);
+  const draftContent = usePresentationStore((state) => state.draftContent);
+  const setDraftContent = usePresentationStore((state) => state.setDraftContent);
+  const editorFocus = usePresentationStore((state) => state.editorFocus);
+  const toggleEditorFocus = usePresentationStore((state) => state.toggleEditorFocus);
+  const showHelp = usePresentationStore((state) => state.showHelp);
+  const setShowHelp = usePresentationStore((state) => state.setShowHelp);
+
+  const showQRCode = useUIStore((state) => state.showQRCode);
+  const setShowQRCode = useUIStore((state) => state.setShowQRCode);
+  const transitionKey = useUIStore((state) => state.transitionKey);
+  const incrementTransitionKey = useUIStore((state) => state.incrementTransitionKey);
+
+  // Hooks antigos (ainda necessários por enquanto)
   const {
-    slides,
-    setSlides,
-    currentSlide,
-    setCurrentSlide,
-    showSlideList,
-    setShowSlideList,
-    loading,
-    error,
-    setError,
-    warning,
-    setWarning,
     handleFileUpload,
     handleAIGeneration,
-    duplicateSlide,
     saveSlideToFile,
     saveAllSlidesToFile,
-    resetSlidesState,
-    reorderSlides,
   } = useSlidesManager();
+
+  // Refs
   const slideContentRef = useRef<HTMLElement | null>(null);
   const slideContainerRef = useRef<HTMLElement | null>(null);
   const presenterScrollRef = useRef<HTMLDivElement | null>(null);
-  const [highContrast, setHighContrast] = useState(() => {
-    try {
-      return localStorage.getItem("presentation-high-contrast") === "1";
-    } catch {
-      return false;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        "presentation-high-contrast",
-        highContrast ? "1" : "0",
-      );
-    } catch {}
-  }, [highContrast]);
-
-  const [presenterMode, setPresenterMode] = useState<boolean>(false);
-  const [editing, setEditing] = useState<boolean>(false);
-  const [draftContent, setDraftContent] = useState<string>("");
-  const [focusMode, setFocusMode] = useState<boolean>(false);
-  const [editorFocus, setEditorFocus] = useState<boolean>(false);
-  const [showHelp, setShowHelp] = useState<boolean>(false);
-  const [slideTransition, setSlideTransition] = useState<string>("fade");
   const thumbsRailRef = useRef<HTMLElement | null>(null);
-  const [transitionKey, setTransitionKey] = useState<number>(0);
 
-  // Remote control states
-  const [showQRCode, setShowQRCode] = useState<boolean>(false);
+  // Socket
   const {
     session,
     isConnecting,
@@ -104,122 +108,66 @@ const Presentation = () => {
   useEffect(() => {
     onRemoteCommand((command) => {
       console.log('📺 Presentation - Comando recebido:', command);
-      console.log('🔍 Detalhes:', {
-        command: command.command,
-        slideIndex: command.slideIndex,
-        scrollDirection: command.scrollDirection,
-        fromClient: command.fromClient
-      });
-      
+
       if (command.command === 'next') {
-        setCurrentSlide((prev) => Math.min(prev + 1, slides.length - 1));
+        setCurrentSlide(Math.min(currentSlide + 1, slides.length - 1));
       } else if (command.command === 'previous') {
-        setCurrentSlide((prev) => Math.max(prev - 1, 0));
+        setCurrentSlide(Math.max(currentSlide - 1, 0));
       } else if (command.command === 'goto' && command.slideIndex !== undefined) {
         setCurrentSlide(Math.max(0, Math.min(command.slideIndex, slides.length - 1)));
       } else if (command.command === 'scroll' && command.scrollDirection) {
-        console.log('🖱️ Executando scroll:', command.scrollDirection);
-        
-        // Escolher o container correto baseado no modo
-        const scrollContainer = presenterMode 
-          ? presenterScrollRef.current 
+        const scrollContainer = presenterMode
+          ? presenterScrollRef.current
           : slideContentRef.current;
-        
-        if (!scrollContainer) {
-          console.warn('⚠️ Container de scroll não encontrado', { 
-            presenterMode, 
-            hasPresenterRef: !!presenterScrollRef.current,
-            hasSlideRef: !!slideContentRef.current 
-          });
-          return;
-        }
-        
+
+        if (!scrollContainer) return;
+
         const scrollAmount = 200;
         const direction = command.scrollDirection === 'up' ? -scrollAmount : scrollAmount;
         const currentPosition = scrollContainer.scrollTop;
         const maxScroll = scrollContainer.scrollHeight - scrollContainer.clientHeight;
         const newPosition = Math.max(0, Math.min(currentPosition + direction, maxScroll));
-        
-        console.log('📊 Scroll details:', {
-          scrollAmount,
-          direction,
-          currentPosition,
-          newPosition,
-          maxScroll,
-          scrollHeight: scrollContainer.scrollHeight,
-          clientHeight: scrollContainer.clientHeight,
-          mode: presenterMode ? 'presenter' : 'normal'
-        });
-        
+
         scrollContainer.scrollTo({
           top: newPosition,
           behavior: 'smooth'
         });
-        
-        // Verificar se realmente rolou após um tempo
-        setTimeout(() => {
-          console.log('📍 Nova posição após scroll:', scrollContainer.scrollTop);
-        }, 500);
       } else if (command.command === 'scroll-sync' && command.scrollPosition !== undefined) {
-        console.log('Sincronizando scroll para posição:', command.scrollPosition);
-        
-        // Escolher o container correto baseado no modo
-        const scrollContainer = presenterMode 
-          ? presenterScrollRef.current 
+        const scrollContainer = presenterMode
+          ? presenterScrollRef.current
           : slideContentRef.current;
-        
+
         if (scrollContainer) {
           scrollContainer.scrollTo({
             top: command.scrollPosition,
             behavior: 'smooth'
           });
-        } else {
-          // Fallback para window se o container não estiver disponível
-          console.warn('⚠️ Usando fallback window.scrollTo');
-          window.scrollTo({
-            top: command.scrollPosition,
-            behavior: 'smooth'
-          });
         }
       } else if (command.command === 'presenter') {
-        // Verificar se o toggle foi especificado explicitamente
         const toggleValue = (command as any).toggle;
         const shouldActivate = toggleValue !== undefined ? toggleValue : !presenterMode;
-        console.log('Toggle modo apresentação:', { 
-          toggleValue, 
-          shouldActivate, 
-          currentState: presenterMode 
-        });
         setPresenterMode(shouldActivate);
         toast.success('Modo Apresentação', {
           description: shouldActivate ? 'Ativado via controle remoto' : 'Desativado via controle remoto'
         });
       } else if (command.command === 'focus') {
-        // Verificar se o toggle foi especificado explicitamente
         const toggleValue = (command as any).toggle;
         const shouldActivate = toggleValue !== undefined ? toggleValue : !focusMode;
-        console.log('Toggle modo foco:', { 
-          toggleValue, 
-          shouldActivate, 
-          currentState: focusMode 
-        });
         setFocusMode(shouldActivate);
         toast.success('Modo Foco', {
           description: shouldActivate ? 'Ativado via controle remoto' : 'Desativado via controle remoto'
         });
       }
-      
-      // Update transition for smooth slide change (except for scroll)
+
       if (command.command !== 'scroll' && command.command !== 'scroll-sync') {
-        setTransitionKey(prev => prev + 1);
+        incrementTransitionKey();
       }
     });
-  }, [onRemoteCommand, slides.length, setCurrentSlide, setTransitionKey, slideContentRef, presenterMode, presenterScrollRef]);
+  }, [onRemoteCommand, slides.length, currentSlide, presenterMode, focusMode, setCurrentSlide, setPresenterMode, setFocusMode, incrementTransitionKey]);
 
   // Update remote clients when slide changes
   useEffect(() => {
     if (session && slides.length > 0) {
-      console.log('📡 Presentation - Enviando updateSlide:', { currentSlide, totalSlides: slides.length });
       updateSlide(currentSlide, slides.length);
     }
   }, [session, currentSlide, slides.length, updateSlide]);
@@ -227,58 +175,31 @@ const Presentation = () => {
   // Share presentation content with remote clients
   useEffect(() => {
     if (session && slides.length > 0) {
-      // Aguardar um momento para garantir que o DOM foi atualizado
       setTimeout(() => {
-        // Tentar múltiplas formas de capturar o conteúdo
         let presentationElement = slideContentRef.current?.parentElement;
-        
+
         if (!presentationElement) {
           presentationElement = document.querySelector('.slide-content') as HTMLElement;
         }
-        
-        if (!presentationElement) {
-          presentationElement = document.querySelector('[data-slide-content]') as HTMLElement;
-        }
-        
-        if (!presentationElement) {
-          presentationElement = document.querySelector('main') as HTMLElement;
-        }
-        
-        if (!presentationElement) {
-          presentationElement = document.body;
-        }
-        
+
         if (presentationElement) {
           const contentHtml = presentationElement.innerHTML;
-          const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-          
-          // Extrair também o conteúdo markdown dos slides para o controle remoto
           const slidesContent = slides.map(slide => slide.content).join('\n\n---\n\n');
-          
-          console.log('📤 Compartilhando conteúdo da apresentação...', {
-            elementFound: !!presentationElement,
-            elementTag: presentationElement.tagName,
-            contentLength: contentHtml.length,
-            currentSlide,
-            totalSlides: slides.length
-          });
-          
+
           shareContent(JSON.stringify({
             html: contentHtml,
             markdown: slidesContent,
             currentSlide,
             totalSlides: slides.length,
-            scrollPosition
+            scrollPosition: window.pageYOffset || document.documentElement.scrollTop
           }));
-        } else {
-          console.warn('❌ Não foi possível encontrar elemento da apresentação para compartilhar');
         }
-      }, 500); // Aumentar delay para 500ms
+      }, 500);
     }
   }, [session, slides, currentSlide, shareContent]);
 
   const handleRestart = () => {
-    resetSlidesState();
+    resetSlides();
     setShowSlideList(false);
     setPresenterMode(false);
     setEditing(false);
@@ -308,7 +229,7 @@ const Presentation = () => {
         await document.documentElement.requestFullscreen();
       } else {
         await document.exitFullscreen();
-    }
+      }
     } catch {
       /* ignore */
     }
@@ -328,8 +249,8 @@ const Presentation = () => {
   useEffect(() => {
     if (presenterMode && presenterScrollRef.current && slides.length > 0) {
       presenterScrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
-        }
-  }, [currentSlide, presenterMode, slides.length, presenterScrollRef]);
+    }
+  }, [currentSlide, presenterMode, slides.length]);
 
   usePresentationShortcuts({
     editing,
@@ -337,12 +258,12 @@ const Presentation = () => {
     slides,
     currentSlide,
     setCurrentSlide,
-    setTransitionKey,
+    setTransitionKey: incrementTransitionKey,
     setFocusMode,
     setShowHelp,
     setDraftContent,
     setEditing,
-    duplicateSlide,
+    duplicateSlide: () => duplicateSlide(currentSlide),
     toggleFullscreen,
     setPresenterMode,
   });
@@ -353,25 +274,18 @@ const Presentation = () => {
     showSlideList,
     slideContainerRef,
     setCurrentSlide,
-    setTransitionKey,
+    setTransitionKey: incrementTransitionKey,
     navigate,
   });
 
   const handleRemoveSlide = (idx: number) => {
-    setSlides((prev) => {
-      if (idx < 0 || idx >= prev.length) return prev;
-      const copy = prev.slice();
-      copy.splice(idx, 1);
-      const nextLength = copy.length;
-      setCurrentSlide((current) =>
-        Math.min(current, Math.max(0, nextLength - 1)),
-      );
-      if (nextLength === 0) {
-        setPresenterMode(false);
-        setShowSlideList(false);
-      }
-      return copy;
-    });
+    setSlides(slides.filter((_, i) => i !== idx));
+    setCurrentSlide(Math.min(currentSlide, Math.max(0, slides.length - 2)));
+
+    if (slides.length <= 1) {
+      setPresenterMode(false);
+      setShowSlideList(false);
+    }
   };
 
   const containerClasses = [
@@ -393,15 +307,14 @@ const Presentation = () => {
       {slides.length === 0 ? (
         <PresentationEmptyState
           highContrast={highContrast}
-          onToggleHighContrast={() => setHighContrast((v) => !v)}
-            onFilesChange={handleFileUpload} 
-            onAIGenerate={handleAIGeneration}
+          onToggleHighContrast={() => setHighContrast(!highContrast)}
+          onFilesChange={handleFileUpload}
+          onAIGenerate={handleAIGeneration}
           onCreateSlide={() => {
-            // Abrir o editor no modo de criação
             setDraftContent("");
             setEditing(true);
           }}
-            loading={loading} 
+          loading={loading}
           error={error}
           warning={warning}
         />
@@ -410,7 +323,7 @@ const Presentation = () => {
           {showSlideList ? (
             <SlideList
               slides={slides}
-              onReorder={(newSlides: Slide[]) => {
+              onReorder={(newSlides) => {
                 setSlides(newSlides);
                 setError("");
                 setWarning("");
@@ -421,58 +334,55 @@ const Presentation = () => {
                 setWarning("");
                 setError("");
               }}
-              onRemove={(idx: number) => handleRemoveSlide(idx)}
+              onRemove={handleRemoveSlide}
               highContrast={highContrast}
-              onToggleContrast={() => setHighContrast((v) => !v)}
+              onToggleContrast={() => setHighContrast(!highContrast)}
             />
           ) : presenterMode ? (
-                <PresenterView
-                  currentHtml={slides[currentSlide].html}
-                  currentIndex={currentSlide}
-                  slidesLength={slides.length}
-                  onNext={() =>
-                    setCurrentSlide((s) => Math.min(slides.length - 1, s + 1))
-                  }
-                  onPrev={() => setCurrentSlide((s) => Math.max(0, s - 1))}
-                  onExit={() => setPresenterMode(false)}
+            <PresenterView
+              currentHtml={slides[currentSlide].html}
+              currentIndex={currentSlide}
+              slidesLength={slides.length}
+              onNext={() =>
+                setCurrentSlide(Math.min(slides.length - 1, currentSlide + 1))
+              }
+              onPrev={() => setCurrentSlide(Math.max(0, currentSlide - 1))}
+              onExit={() => setPresenterMode(false)}
               scrollContainerRef={presenterScrollRef}
-                />
-              ) : (
+            />
+          ) : (
             <SlidesWorkspace
-                      slides={slides}
-                      currentSlide={currentSlide}
+              slides={slides}
+              currentSlide={currentSlide}
               setCurrentSlide={setCurrentSlide}
-                      transitionKey={transitionKey}
-                      setTransitionKey={setTransitionKey}
-                      slideTransition={slideTransition}
-                      setSlideTransition={setSlideTransition}
-                      focusMode={focusMode}
-                      setFocusMode={setFocusMode}
-                      presenterMode={presenterMode}
-                      setPresenterMode={setPresenterMode}
+              transitionKey={transitionKey}
+              setTransitionKey={incrementTransitionKey}
+              slideTransition={slideTransition}
+              setSlideTransition={setSlideTransition}
+              focusMode={focusMode}
+              setFocusMode={setFocusMode}
+              presenterMode={presenterMode}
+              setPresenterMode={setPresenterMode}
               thumbsRailRef={thumbsRailRef}
               slideContainerRef={slideContainerRef}
               slideContentRef={slideContentRef}
-              onRemove={(idx: number) => handleRemoveSlide(idx)}
-              onReorder={reorderSlides}
-                      setShowSlideList={setShowSlideList}
-                      setEditing={setEditing}
+              onRemove={handleRemoveSlide}
+              onReorder={(fromIdx, toIdx) => reorderSlides(fromIdx, toIdx)}
+              setShowSlideList={setShowSlideList}
+              setEditing={setEditing}
               setDraftContent={setDraftContent}
-                      duplicateSlide={duplicateSlide}
-                      onSaveAllSlides={saveAllSlidesToFile}
-                      onRestart={handleRestart}
-                      highContrast={highContrast}
-                      setHighContrast={setHighContrast}
+              duplicateSlide={() => duplicateSlide(currentSlide)}
+              onSaveAllSlides={saveAllSlidesToFile}
+              onRestart={handleRestart}
+              highContrast={highContrast}
+              setHighContrast={setHighContrast}
               loading={loading}
               onShowRemoteControl={() => {
-                console.log('QR Code clicado - Platform:', platform, 'Supported:', isSupported);
-                
                 if (!isSupported) {
-                  // Em plataformas não suportadas, apenas mostrar aviso
                   setShowQRCode(true);
                   return;
                 }
-                
+
                 if (!session) {
                   createPresentation();
                 }
@@ -495,27 +405,23 @@ const Presentation = () => {
         onChange={setDraftContent}
         onCancel={() => {
           setEditing(false);
-          // Resetar para modo edit quando fechar
           setDraftContent("");
         }}
         onSave={() => {
           if (slides.length > 0 && currentSlide < slides.length) {
-          setSlides((prev) => {
-            const copy = prev.slice();
-            const item = copy[currentSlide];
+            const updatedSlides = [...slides];
+            const item = updatedSlides[currentSlide];
             if (item) {
               item.content = draftContent;
               item.html = parseMarkdownSafe(draftContent);
             }
-            return copy;
-          });
-          setEditing(false);
-          saveSlideToFile(currentSlide, draftContent);
+            setSlides(updatedSlides);
+            setEditing(false);
+            saveSlideToFile(currentSlide, draftContent);
           }
         }}
         mode={slides.length === 0 ? 'create' : 'edit'}
         onCreateFiles={(files) => {
-          // Processar arquivos .md como slides
           const newSlides = files.map((file) => {
             const { clean, notes } = extractNotes(file.content);
             return {
@@ -531,7 +437,7 @@ const Presentation = () => {
           setEditing(false);
         }}
         editorFocus={editorFocus}
-        onToggleEditorFocus={() => setEditorFocus((v) => !v)}
+        onToggleEditorFocus={toggleEditorFocus}
       />
       {focusMode && (
         <div

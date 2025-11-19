@@ -15,7 +15,7 @@ type PresentationState = {
     showHelp: boolean;
 
     // Actions
-    setCurrentSlide: (index: number) => void;
+    setCurrentSlide: (updater: number | ((prev: number) => number)) => void;
     nextSlide: (maxSlides: number) => void;
     previousSlide: () => void;
     goToSlide: (index: number, maxSlides: number) => void;
@@ -26,7 +26,7 @@ type PresentationState = {
     toggleFocusMode: () => void;
     setHighContrast: (contrast: boolean) => void;
     toggleHighContrast: () => void;
-    setSlideTransition: (transition: 'fade' | 'slide' | 'none') => void;
+    setSlideTransition: (transition: string) => void;
     setEditing: (editing: boolean) => void;
     setDraftContent: (content: string) => void;
     setEditorFocus: (focus: boolean) => void;
@@ -52,7 +52,9 @@ export const usePresentationStore = create<PresentationState>()(
             showHelp: false,
 
             // Actions
-            setCurrentSlide: (index) => set({ currentSlide: index }),
+            setCurrentSlide: (updater) => set((state) => ({
+                currentSlide: typeof updater === 'function' ? updater(state.currentSlide) : updater
+            })),
 
             nextSlide: (maxSlides) => set((state) => ({
                 currentSlide: Math.min(state.currentSlide + 1, maxSlides - 1)
@@ -86,7 +88,9 @@ export const usePresentationStore = create<PresentationState>()(
                 highContrast: !state.highContrast
             })),
 
-            setSlideTransition: (transition) => set({ slideTransition: transition }),
+            setSlideTransition: (transition) => set({
+                slideTransition: transition as 'fade' | 'slide' | 'none'
+            }),
 
             setEditing: (editing) => set({ editing }),
 

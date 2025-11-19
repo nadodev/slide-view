@@ -1,13 +1,14 @@
-import { useState, useCallback, type ChangeEvent } from "react";
-import { Slide } from "../components/slides/types";
-import parseMarkdownSafe from "../utils/markdown";
+import { useCallback } from "react";
+import { useSlidesStore } from "@/store";
+import { Slide } from "@/types";
+import parseMarkdownSafe from "@/utils/markdown";
 import {
   createSlideFromMarkdown,
   generateSlidesWithGemini,
-} from "../utils/gemini";
+} from "@/utils/gemini";
 
 type FileChange =
-  | ChangeEvent<HTMLInputElement>
+  | React.ChangeEvent<HTMLInputElement>
   | { target?: { files?: FileList | File[] } }
   | null;
 
@@ -19,13 +20,16 @@ type UploadOptions = {
 
 const DELIMITER_FALLBACK = "----'----";
 
+/**
+ * Hook que fornece funções utilitárias para gerenciar slides
+ * Usa Zustand store para estado global
+ */
 export function useSlidesManager() {
-  const [slides, setSlides] = useState<Slide[]>([]);
-  const [currentSlide, setCurrentSlide] = useState<number>(0);
-  const [showSlideList, setShowSlideList] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [warning, setWarning] = useState("");
+  const setSlides = useSlidesStore((state) => state.setSlides);
+  const setLoading = useSlidesStore((state) => state.setLoading);
+  const setError = useSlidesStore((state) => state.setError);
+  const setWarning = useSlidesStore((state) => state.setWarning);
+  const slides = useSlidesStore((state) => state.slides);
 
   const extractNotes = useCallback((text: string) => {
     const notes: string[] = [];
@@ -38,15 +42,6 @@ export function useSlidesManager() {
       },
     );
     return { clean: cleaned.trim(), notes };
-  }, []);
-
-  const resetSlidesState = useCallback(() => {
-    setSlides([]);
-    setCurrentSlide(0);
-    setShowSlideList(false);
-    setError("");
-    setWarning("");
-    setLoading(false);
   }, []);
 
   const handleFileUpload = useCallback(
@@ -106,8 +101,6 @@ export function useSlidesManager() {
           });
 
           setSlides(loadedSlides);
-          setCurrentSlide(0);
-          setShowSlideList(true);
           return;
         }
 
@@ -129,8 +122,6 @@ export function useSlidesManager() {
         );
 
         setSlides(loadedSlides);
-        setCurrentSlide(0);
-        setShowSlideList(true);
       } catch (err) {
         const message =
           err instanceof Error ? err.message : String(err ?? "Erro desconhecido");
@@ -139,7 +130,7 @@ export function useSlidesManager() {
         setLoading(false);
       }
     },
-    [extractNotes],
+    [extractNotes, setSlides, setLoading, setError, setWarning],
   );
 
   const handleAIGeneration = useCallback(
@@ -165,7 +156,6 @@ export function useSlidesManager() {
         }));
 
         setSlides(processedSlides);
-        setCurrentSlide(0);
         setWarning(
           `✨ ${processedSlides.length} slides gerados com sucesso usando IA Gemini!`,
         );
@@ -177,26 +167,8 @@ export function useSlidesManager() {
         setLoading(false);
       }
     },
-    [],
+    [setSlides, setLoading, setError, setWarning],
   );
-
-  const duplicateSlide = useCallback(() => {
-    setSlides((prev) => {
-      if (prev.length === 0) return prev;
-      const current = prev[currentSlide];
-      if (!current) return prev;
-      const duplicate = {
-        name: `${current.name}-copia`,
-        content: current.content,
-        notes: current.notes ? [...current.notes] : [],
-        html: current.html,
-      };
-      const next = [...prev];
-      next.splice(currentSlide + 1, 0, duplicate);
-      setCurrentSlide(currentSlide + 1);
-      return next;
-    });
-  }, [currentSlide]);
 
   const saveSlideToFile = useCallback(
     async (index: number, content: string) => {
@@ -205,7 +177,7 @@ export function useSlidesManager() {
         if (!slide) return;
         const supportsFS =
           typeof window !== "undefined" &&
-          "showSaveFilePicker" in (window as typeof window & { showSaveFilePicker: () => Promise<any> });
+          "showSaveFilePicker" in (window as any);
 
         if (supportsFS) {
           let handle = slide._fileHandle;
@@ -219,11 +191,12 @@ export function useSlidesManager() {
                 { description: "Text", accept: { "text/plain": [".txt"] } },
               ],
             });
-            setSlides((prev) => {
-              const copy = prev.slice();
-              if (copy[index]) copy[index]._fileHandle = handle;
-              return copy;
-            });
+            // Update file handle in store
+            const updatedSlides = [...slides];
+            if (updatedSlides[index]) {
+              updatedSlides[index]._fileHandle = handle;
+              setSlides(updatedSlides);
+            }
           }
           const writable = await handle.createWritable();
           await writable.write(content);
@@ -249,7 +222,7 @@ export function useSlidesManager() {
         setTimeout(() => setWarning(""), 4000);
       }
     },
-    [slides],
+    [slides, setSlides, setWarning],
   );
 
   const saveAllSlidesToFile = useCallback(async () => {
@@ -261,7 +234,7 @@ export function useSlidesManager() {
     try {
       const supportsFS =
         typeof window !== "undefined" &&
-        "showSaveFilePicker" in (window as typeof window & { showSaveFilePicker: () => Promise<any> });
+        "showSaveFilePicker" in (window as any);
 
       if (supportsFS) {
         const handle = await (window as any).showSaveFilePicker({
@@ -296,141 +269,12 @@ export function useSlidesManager() {
         err instanceof Error ? err.message : String(err ?? "Erro ao salvar");
       setError("Erro ao salvar o arquivo: " + message);
     }
-  }, [slides]);
-
-  const exportCombinedMarkdown = useCallback(() => {
-    if (!slides.length) return;
-    const combined = slides
-      .map((slide) => slide.content)
-      .join(`\n\n${DELIMITER_FALLBACK}\n\n`);
-    const blob = new Blob([combined], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "apresentacao-combinada.md";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-  }, [slides]);
-
-  const exportSlideAsPdf = useCallback(
-    (index: number) => {
-      try {
-        const slide = slides[index];
-        if (!slide) return;
-        const slideHtml = slide.html || "";
-        const popup = window.open("", "_blank");
-        if (!popup) {
-          setWarning(
-            "Não foi possível abrir nova janela para exportar. Bloqueador de pop-ups?",
-          );
-          setTimeout(() => setWarning(""), 4000);
-          return;
-        }
-
-        const doc = popup.document;
-        doc.open();
-        doc.write(
-          '<!doctype html><html><head><meta charset="utf-8"><title>Slide - ' +
-            (slide.name || index + 1) +
-            "</title>",
-        );
-
-        Array.from(
-          document.querySelectorAll('link[rel="stylesheet"], style'),
-        ).forEach((node) => {
-          if (node.tagName.toLowerCase() === "link") {
-            const href = (node as HTMLLinkElement).href;
-            try {
-              const parsed = new URL(href, window.location.href);
-              if (parsed.origin === window.location.origin) {
-                doc.write('<link rel="stylesheet" href="' + parsed.href + '">');
-              }
-            } catch {
-              /* ignore */
-            }
-          } else if (node.tagName.toLowerCase() === "style") {
-            doc.write("<style>" + (node.textContent || "") + "</style>");
-          }
-        });
-
-        doc.write(
-          "<style>html,body{height:100%;margin:0;padding:0;background:#fff;}@page{size:auto;margin:12mm;}body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; } .slide-container{box-shadow:none !important;} .navigation, .thumbs-rail, .editor-overlay, .editor-panel, .presenter-bar { display: none !important; } .presentation-main{display:block;} </style>",
-        );
-        doc.write("</head><body>");
-        doc.write('<div class="presentation-container">');
-        doc.write('<div class="presentation-with-thumbs">');
-        doc.write('<div class="presentation-main">');
-        doc.write('<div class="slide-container">');
-        doc.write('<div class="slide-content">');
-        doc.write(slideHtml);
-        doc.write("</div></div></div></div></div>");
-        doc.write("</body></html>");
-        doc.close();
-
-        setTimeout(() => {
-          try {
-            popup.focus();
-            popup.print();
-          } catch (err) {
-            console.warn("Erro ao imprimir slide:", err);
-          }
-        }, 900);
-      } catch (err) {
-        console.warn("Erro ao exportar slide para PDF", err);
-        setWarning("Erro ao exportar slide como PDF.");
-        setTimeout(() => setWarning(""), 4000);
-      }
-    },
-    [slides],
-  );
-
-  const reorderSlides = useCallback(
-    (fromIndex: number, toIndex: number) => {
-      if (fromIndex === toIndex) return;
-      
-      setSlides((prevSlides) => {
-        const newSlides = [...prevSlides];
-        const [movedSlide] = newSlides.splice(fromIndex, 1);
-        newSlides.splice(toIndex, 0, movedSlide);
-        return newSlides;
-      });
-
-      // Ajustar o slide atual se necessário
-      if (currentSlide === fromIndex) {
-        setCurrentSlide(toIndex);
-      } else if (currentSlide > fromIndex && currentSlide <= toIndex) {
-        setCurrentSlide(currentSlide - 1);
-      } else if (currentSlide < fromIndex && currentSlide >= toIndex) {
-        setCurrentSlide(currentSlide + 1);
-      }
-    },
-    [currentSlide],
-  );
+  }, [slides, setWarning, setError]);
 
   return {
-    slides,
-    setSlides,
-    currentSlide,
-    setCurrentSlide,
-    showSlideList,
-    setShowSlideList,
-    loading,
-    setLoading,
-    error,
-    setError,
-    warning,
-    setWarning,
     handleFileUpload,
     handleAIGeneration,
-    duplicateSlide,
-    reorderSlides,
     saveSlideToFile,
     saveAllSlidesToFile,
-    exportCombinedMarkdown,
-    exportSlideAsPdf,
-    resetSlidesState,
   };
 }
-
