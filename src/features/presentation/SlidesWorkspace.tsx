@@ -24,6 +24,7 @@ type SlidesWorkspaceProps = {
   setDraftContent: (value: string) => void;
   duplicateSlide: () => void;
   onSaveAllSlides: () => void;
+  onSavePresentation: () => void;
   onRestart: () => void;
   highContrast: boolean;
   setHighContrast: (value: boolean | ((prev: boolean) => boolean)) => void;
@@ -58,6 +59,7 @@ export default function SlidesWorkspace({
   setDraftContent,
   duplicateSlide,
   onSaveAllSlides,
+  onSavePresentation,
   onRestart,
   highContrast,
   setHighContrast,
@@ -105,6 +107,7 @@ export default function SlidesWorkspace({
           }}
           duplicateSlide={duplicateSlide}
           onSaveAllSlides={onSaveAllSlides}
+          onSavePresentation={onSavePresentation}
           onRestart={onRestart}
           highContrast={highContrast}
           setHighContrast={setHighContrast}

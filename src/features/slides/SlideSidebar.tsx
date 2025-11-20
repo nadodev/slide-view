@@ -24,7 +24,7 @@ export default function SlideSidebar({
   return (
     <aside
       ref={thumbsRailRef as RefObject<HTMLDivElement>}
-      className="flex w-80 flex-col border-r border-white/5 bg-black/40 backdrop-blur-xl"
+      className="flex w-80 flex-col border-r border-white/10 bg-[#0a0a0a]/80 backdrop-blur-xl"
     >
       <SidebarHeader totalSlides={slides.length} />
       <SlideThumbList
@@ -41,7 +41,7 @@ export default function SlideSidebar({
 }
 
 const SidebarHeader = ({ totalSlides }: { totalSlides: number }) => (
-  <div className="shrink-0 border-b border-white/5 bg-black/30 px-6 py-5">
+  <div className="shrink-0 border-b border-white/10 bg-white/5 px-6 py-5">
     <div className="flex items-center justify-between">
       <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
         Slides
@@ -60,7 +60,7 @@ const SidebarFooter = ({
   currentSlide: number;
   totalSlides: number;
 }) => (
-  <div className="shrink-0 border-t border-white/5 bg-black/30 px-6 py-4 text-xs text-white/60">
+  <div className="shrink-0 border-t border-white/10 bg-white/5 px-6 py-4 text-xs text-white/60">
     <div className="flex items-center justify-between">
       <span>Navegação</span>
       <div className="flex items-center gap-2">
@@ -74,7 +74,7 @@ const SidebarFooter = ({
     <div className="mt-3 flex items-center gap-2">
       <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
         <div
-          className="h-full bg-linear-to-r from-indigo-400 to-purple-500 transition-[width] duration-500"
+          className="h-full bg-gradient-to-r from-blue-400 to-purple-500 transition-[width] duration-500"
           style={{ width: `${((currentSlide + 1) / totalSlides) * 100}%` }}
         />
       </div>

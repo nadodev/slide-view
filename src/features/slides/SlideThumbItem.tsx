@@ -62,7 +62,7 @@ export default function SlideThumbItem({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDraggedOver(false);
-    
+
     const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
     if (fromIndex !== index && onReorder) {
       onReorder(fromIndex, index);
@@ -70,7 +70,7 @@ export default function SlideThumbItem({
   };
 
   return (
-    <li 
+    <li
       className={`relative transition-all duration-200 ${isDragging ? 'opacity-50 scale-95' : ''} ${draggedOver ? 'transform -translate-y-1' : ''}`}
       draggable
       onDragStart={handleDragStart}
@@ -88,8 +88,8 @@ export default function SlideThumbItem({
         type="button"
         onClick={() => onSelect(index)}
         className={`cursor-pointer group w-full overflow-hidden rounded-xl border text-left transition ${isActive
-            ? "border-white/20 bg-gradient-to-br from-indigo-600/80 to-purple-600/80 shadow-lg shadow-indigo-900/30"
-            : "border-white/5 bg-white/5 hover:border-white/20 hover:bg-white/10"
+          ? "border-blue-500/50 bg-blue-500/10 shadow-lg shadow-blue-900/20"
+          : "border-white/5 bg-white/5 hover:border-white/20 hover:bg-white/10"
           }`}
       >
 
@@ -98,18 +98,17 @@ export default function SlideThumbItem({
           <div className="flex items-start gap-3">
             {/* Drag handle */}
             <div className="flex flex-col items-center gap-1 pt-1">
-              <GripVertical 
-                size={16} 
-                className={`cursor-grab active:cursor-grabbing transition-colors ${
-                  isActive ? "text-white/40" : "text-white/20 group-hover:text-white/40"
-                }`}
+              <GripVertical
+                size={16}
+                className={`cursor-grab active:cursor-grabbing transition-colors ${isActive ? "text-blue-400" : "text-white/20 group-hover:text-white/40"
+                  }`}
               />
             </div>
 
             <div
               className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold ${isActive
-                  ? "bg-white/20 text-white"
-                  : "bg-white/10 text-white/60 group-hover:bg-white/15"
+                ? "bg-blue-500/20 text-blue-400"
+                : "bg-white/10 text-white/60 group-hover:bg-white/15"
                 }`}
             >
               {index + 1}
@@ -135,7 +134,7 @@ export default function SlideThumbItem({
         </div>
 
         {isActive && (
-          <div className="h-1 w-full bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300" />
+          <div className="h-1 w-full bg-blue-500" />
         )}
       </button>
       {canRemove && onRemove && (
@@ -151,40 +150,39 @@ export default function SlideThumbItem({
                 h-6 w-6 p-0.5
                 flex items-center justify-center
                 rounded-sm cursor-pointer
-                text-red-400/70
+                text-white/20
                 transition-colors 
                 group
-                hover:bg-red-500 hover:text-white
+                hover:bg-red-500/20 hover:text-red-400
                 "
             >
               <Trash2Icon
                 size={16}
                 className="
                   transition-colors
-                  group-hover:text-white
                 "
               />
             </Button>
           </AlertDialogTrigger>
-          <AlertDialogContent className="bg-slate-900 border-slate-700">
+          <AlertDialogContent className="bg-[#0a0a0a] border border-white/10">
             <AlertDialogHeader>
               <AlertDialogTitle className="text-white">
                 Excluir Slide {index + 1}
               </AlertDialogTitle>
-              <AlertDialogDescription className="text-slate-300">
+              <AlertDialogDescription className="text-white/60">
                 Tem certeza que deseja excluir este slide? Esta ação não pode ser desfeita.
                 {slide.name && (
-                  <div className="mt-2 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
-                    <span className="text-sm font-medium text-slate-200">Slide: {slide.name}</span>
+                  <div className="mt-2 p-3 bg-white/5 rounded-lg border border-white/10">
+                    <span className="text-sm font-medium text-white/80">Slide: {slide.name}</span>
                   </div>
                 )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700">
+              <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white">
                 Cancelar
               </AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={() => onRemove(index)}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >

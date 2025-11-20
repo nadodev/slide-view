@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useSlidesStore } from "@/store";
+import { useSlidesStore, usePresentationStore } from "@/store";
 import { parseMarkdownFiles, saveToFile, exportSlidesAsMarkdown, updateSlideFileHandle } from "@/services/slides/slideService";
 import { generateSlides } from "@/services/ai/aiService";
 
@@ -24,6 +24,7 @@ export function useSlidesManager() {
   const setError = useSlidesStore((state) => state.setError);
   const setWarning = useSlidesStore((state) => state.setWarning);
   const slides = useSlidesStore((state) => state.slides);
+  const setShowSlideList = usePresentationStore((state) => state.setShowSlideList);
 
   const handleFileUpload = useCallback(
     async (event: FileChange, options: UploadOptions = {}) => {
@@ -46,6 +47,7 @@ export function useSlidesManager() {
         });
 
         setSlides(loadedSlides);
+        setShowSlideList(true);
         setWarning("");
       } catch (err) {
         const message =
@@ -67,6 +69,7 @@ export function useSlidesManager() {
       try {
         const generatedSlides = await generateSlides(prompt, slideCount, baseText);
         setSlides(generatedSlides);
+        setShowSlideList(true);
         setWarning(
           `✨ ${generatedSlides.length} slides gerados com sucesso usando IA Gemini!`,
         );

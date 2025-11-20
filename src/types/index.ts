@@ -5,14 +5,15 @@
 // SLIDE TYPES
 // ============================================
 export interface Slide {
-    id: string;
+    id?: string;
     name: string;
     content: string;
-    html?: string;
-    notes?: string;
+    html: string;
+    notes?: string[];
     order?: number;
     createdAt?: Date;
     updatedAt?: Date;
+    _fileHandle?: any;
 }
 
 export interface SlideFile {

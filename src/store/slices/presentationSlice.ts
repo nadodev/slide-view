@@ -19,19 +19,19 @@ type PresentationState = {
     nextSlide: (maxSlides: number) => void;
     previousSlide: () => void;
     goToSlide: (index: number, maxSlides: number) => void;
-    setShowSlideList: (show: boolean) => void;
-    setPresenterMode: (mode: boolean) => void;
+    setShowSlideList: (updater: boolean | ((prev: boolean) => boolean)) => void;
+    setPresenterMode: (updater: boolean | ((prev: boolean) => boolean)) => void;
     togglePresenterMode: () => void;
-    setFocusMode: (mode: boolean) => void;
+    setFocusMode: (updater: boolean | ((prev: boolean) => boolean)) => void;
     toggleFocusMode: () => void;
-    setHighContrast: (contrast: boolean) => void;
+    setHighContrast: (updater: boolean | ((prev: boolean) => boolean)) => void;
     toggleHighContrast: () => void;
     setSlideTransition: (transition: string) => void;
-    setEditing: (editing: boolean) => void;
+    setEditing: (updater: boolean | ((prev: boolean) => boolean)) => void;
     setDraftContent: (content: string) => void;
-    setEditorFocus: (focus: boolean) => void;
+    setEditorFocus: (updater: boolean | ((prev: boolean) => boolean)) => void;
     toggleEditorFocus: () => void;
-    setShowHelp: (show: boolean) => void;
+    setShowHelp: (updater: boolean | ((prev: boolean) => boolean)) => void;
     toggleShowHelp: () => void;
     resetPresentation: () => void;
 };
@@ -68,21 +68,29 @@ export const usePresentationStore = create<PresentationState>()(
                 currentSlide: Math.max(0, Math.min(index, maxSlides - 1))
             }),
 
-            setShowSlideList: (show) => set({ showSlideList: show }),
+            setShowSlideList: (updater) => set((state) => ({
+                showSlideList: typeof updater === 'function' ? updater(state.showSlideList) : updater
+            })),
 
-            setPresenterMode: (mode) => set({ presenterMode: mode }),
+            setPresenterMode: (updater) => set((state) => ({
+                presenterMode: typeof updater === 'function' ? updater(state.presenterMode) : updater
+            })),
 
             togglePresenterMode: () => set((state) => ({
                 presenterMode: !state.presenterMode
             })),
 
-            setFocusMode: (mode) => set({ focusMode: mode }),
+            setFocusMode: (updater) => set((state) => ({
+                focusMode: typeof updater === 'function' ? updater(state.focusMode) : updater
+            })),
 
             toggleFocusMode: () => set((state) => ({
                 focusMode: !state.focusMode
             })),
 
-            setHighContrast: (contrast) => set({ highContrast: contrast }),
+            setHighContrast: (updater) => set((state) => ({
+                highContrast: typeof updater === 'function' ? updater(state.highContrast) : updater
+            })),
 
             toggleHighContrast: () => set((state) => ({
                 highContrast: !state.highContrast
@@ -92,17 +100,23 @@ export const usePresentationStore = create<PresentationState>()(
                 slideTransition: transition as 'fade' | 'slide' | 'none'
             }),
 
-            setEditing: (editing) => set({ editing }),
+            setEditing: (updater) => set((state) => ({
+                editing: typeof updater === 'function' ? updater(state.editing) : updater
+            })),
 
             setDraftContent: (content) => set({ draftContent: content }),
 
-            setEditorFocus: (focus) => set({ editorFocus: focus }),
+            setEditorFocus: (updater) => set((state) => ({
+                editorFocus: typeof updater === 'function' ? updater(state.editorFocus) : updater
+            })),
 
             toggleEditorFocus: () => set((state) => ({
                 editorFocus: !state.editorFocus
             })),
 
-            setShowHelp: (show) => set({ showHelp: show }),
+            setShowHelp: (updater) => set((state) => ({
+                showHelp: typeof updater === 'function' ? updater(state.showHelp) : updater
+            })),
 
             toggleShowHelp: () => set((state) => ({
                 showHelp: !state.showHelp

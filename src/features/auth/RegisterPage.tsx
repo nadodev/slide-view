@@ -105,7 +105,7 @@ export function RegisterPage() {
                 description: `Bem-vindo ao SlideView, ${mockUser.name}!`,
             });
 
-            navigate('/app');
+            navigate('/dashboard');
         } catch (error) {
             toast.error('Erro ao criar conta', {
                 description: 'Tente novamente mais tarde.',
@@ -230,8 +230,8 @@ export function RegisterPage() {
                                         <div className="flex items-center justify-between mb-1">
                                             <span className="text-xs text-slate-400">Força da senha:</span>
                                             <span className={`text-xs font-semibold ${passwordStrength.label === 'Forte' ? 'text-green-400' :
-                                                    passwordStrength.label === 'Média' ? 'text-yellow-400' :
-                                                        'text-red-400'
+                                                passwordStrength.label === 'Média' ? 'text-yellow-400' :
+                                                    'text-red-400'
                                                 }`}>
                                                 {passwordStrength.label}
                                             </span>

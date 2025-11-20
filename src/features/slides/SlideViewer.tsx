@@ -17,7 +17,7 @@ export default function SlideViewer({
   return (
     <div
       ref={slideContainerRef as any}
-      className="w-full h-full shadow-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col"
+      className="w-full h-full shadow-2xl bg-[#0a0a0a] border border-white/10 flex flex-col"
     >
       <div
         ref={slideContentRef as any}
@@ -33,20 +33,20 @@ export default function SlideViewer({
         }
 
         .custom-scroll::-webkit-scrollbar-track {
-          background: rgba(31, 41, 55, 0.5);
+          background: rgba(255, 255, 255, 0.05);
           border-radius: 5px;
           margin: 8px 0;
         }
 
         .custom-scroll::-webkit-scrollbar-thumb {
-          background: #4b5563;
+          background: rgba(255, 255, 255, 0.2);
           border-radius: 5px;
           border: 2px solid transparent;
           background-clip: padding-box;
         }
 
         .custom-scroll::-webkit-scrollbar-thumb:hover {
-          background: #6b7280;
+          background: rgba(255, 255, 255, 0.3);
           border: 2px solid transparent;
           background-clip: padding-box;
         }

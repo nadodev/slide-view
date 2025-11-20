@@ -68,7 +68,7 @@ export function LoginPage() {
                 description: `Bem-vindo de volta, ${mockUser.name}!`,
             });
 
-            navigate('/app');
+            navigate('/dashboard');
         } catch (error) {
             toast.error('Erro ao fazer login', {
                 description: 'Verifique suas credenciais e tente novamente.',

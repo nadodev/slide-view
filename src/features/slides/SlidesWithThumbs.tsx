@@ -45,7 +45,7 @@ export default function SlidesWithThumbs({
   const showSidebar = !focusMode && !presenterMode;
 
   return (
-    <div className="flex h-[calc(100vh-80px)] w-full overflow-hidden bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="flex h-[calc(100vh-80px)] w-full overflow-hidden bg-[#0a0a0a]">
       {showSidebar && (
         <SlideSidebar
           slides={slides}

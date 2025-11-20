@@ -29,17 +29,6 @@ export default function PresentationEmptyState({
 }: PresentationEmptyStateProps) {
   return (
     <div className="relative flex w-full flex-col items-center gap-6">
-      <div className="absolute right-4 top-4">
-        <button
-          className="reload-btn"
-          onClick={onToggleHighContrast}
-          aria-pressed={highContrast}
-          aria-label="Alternar alto contraste"
-        >
-          {highContrast ? "Contraste Padrão" : "Alto Contraste"}
-        </button>
-      </div>
-
       <UploadArea
         onFilesChange={onFilesChange}
         onAIGenerate={onAIGenerate}
@@ -48,31 +37,25 @@ export default function PresentationEmptyState({
       />
 
       {loading && (
-        <>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
           <Carregando
             message={"Processando arquivos..."}
             showProgress={true}
           />
-        </>
+        </div>
       )}
 
       {error && (
-        <div className="message error">
-          <AlertCircle /> {error}
+        <div className="flex items-center gap-2 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400">
+          <AlertCircle size={18} />
+          <span className="text-sm font-medium">{error}</span>
         </div>
       )}
 
       {warning && (
-        <div
-          className="message"
-          style={{
-            color: "#a16207",
-            background: "#fff7ed",
-            padding: 8,
-            borderRadius: 6,
-          }}
-        >
-          {warning}
+        <div className="flex items-center gap-2 px-4 py-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-400">
+          <AlertCircle size={18} />
+          <span className="text-sm font-medium">{warning}</span>
         </div>
       )}
     </div>

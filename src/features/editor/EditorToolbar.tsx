@@ -27,7 +27,7 @@ export function EditorToolbar({
     onCancel
 }: EditorToolbarProps) {
     return (
-        <div className="flex items-center justify-between p-2 border-b border-white/10 bg-black/20 backdrop-blur-sm">
+        <div className="flex items-center justify-between p-2 border-b border-white/10 bg-[#0a0a0a]/90 backdrop-blur-sm">
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
                 <Button
                     variant="ghost"
@@ -182,7 +182,7 @@ export function EditorToolbar({
                 <Button
                     size="sm"
                     onClick={onSave}
-                    className="h-8 px-3 bg-purple-600 hover:bg-purple-700 text-white border-0"
+                    className="h-8 px-3 bg-blue-600 hover:bg-blue-500 text-white border-0 shadow-lg shadow-blue-500/20"
                 >
                     <Save className="h-4 w-4 mr-2" />
                     Salvar

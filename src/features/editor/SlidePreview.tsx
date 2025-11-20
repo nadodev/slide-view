@@ -11,9 +11,9 @@ export function SlidePreview({ htmlContent }: SlidePreviewProps) {
   useMermaid(htmlContent);
 
   return (
-    <div className="h-full bg-black flex flex-col">
-      <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/10">
-        <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Preview</span>
+    <div className="h-full bg-[#0a0a0a] flex flex-col">
+      <div className="flex items-center justify-between px-4 py-2 bg-[#0a0a0a] border-b border-white/10">
+        <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Preview</span>
       </div>
 
       <div

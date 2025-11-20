@@ -147,22 +147,22 @@ export default function UploadArea({
   };
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 md:p-6">
+    <div className="w-full flex items-center justify-center p-4 md:p-6">
       <div className="w-full max-w-5xl">
         {/* Header */}
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="relative">
-              <div className="absolute inset-0 bg-violet-500 rounded-2xl blur-xl opacity-30 animate-pulse"></div>
-              <div className="relative bg-gradient-to-br from-violet-600 to-fuchsia-600 p-3 rounded-2xl">
+              <div className="absolute inset-0 bg-blue-500 rounded-2xl blur-xl opacity-30 animate-pulse"></div>
+              <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 p-3 rounded-2xl">
                 <Sparkles className="text-white" size={28} />
               </div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-black bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight">
               SlideView
             </h1>
           </div>
-          <p className="text-slate-400 text-base md:text-xl font-light max-w-2xl mx-auto">
+          <p className="text-white/60 text-base md:text-xl font-light max-w-2xl mx-auto">
             Crie apresentações profissionais em segundos com IA ou importe seus arquivos Markdown
           </p>
         </div>
@@ -175,13 +175,13 @@ export default function UploadArea({
         />
 
         {/* Main Content */}
-        <div className="relative">
+        <div className="relative mt-8">
           <div className={`absolute -inset-1 rounded-3xl blur-2xl opacity-20 transition-all duration-500 ${mode === 'ai'
-              ? 'bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600'
-              : 'bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-600'
+            ? 'bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600'
+            : 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600'
             }`}></div>
 
-          <div className="relative bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-700/50">
+          <div className="relative bg-[#0a0a0a]/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/10">
             {mode === 'upload' ? (
               <>
                 <FileUploader
@@ -212,11 +212,11 @@ export default function UploadArea({
               <div
                 role="alert"
                 aria-live="polite"
-                className="mx-6 md:mx-8 mb-6 md:mb-8 p-4 md:p-5 bg-red-500/10 border-2 border-red-500/50 rounded-2xl backdrop-blur-sm animate-in fade-in duration-300"
+                className="mx-6 md:mx-8 mb-6 md:mb-8 p-4 md:p-5 bg-red-500/10 border border-red-500/20 rounded-xl backdrop-blur-sm animate-in fade-in duration-300"
               >
                 <div className="flex items-start gap-3 md:gap-4">
-                  <div className="flex-shrink-0 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mt-0.5 shadow-lg">
-                    <span className="text-white text-sm font-bold">!</span>
+                  <div className="flex-shrink-0 w-6 h-6 bg-red-500/20 rounded-full flex items-center justify-center mt-0.5">
+                    <span className="text-red-200 text-sm font-bold">!</span>
                   </div>
                   <p className="text-red-200 font-medium flex-1 text-sm md:text-base">{localError}</p>
                 </div>
@@ -227,8 +227,8 @@ export default function UploadArea({
 
         {/* Footer Info */}
         <div className="mt-6 md:mt-8 text-center">
-          <p className="text-slate-500 text-xs md:text-sm flex items-center justify-center gap-2 flex-wrap">
-            <span className={mode === 'ai' ? 'text-emerald-400' : 'text-violet-400'}>✨</span>
+          <p className="text-white/40 text-xs md:text-sm flex items-center justify-center gap-2 flex-wrap">
+            <span className={mode === 'ai' ? 'text-emerald-400' : 'text-blue-400'}>✨</span>
             {mode === 'upload'
               ? 'Arquivos ordenados alfabeticamente • Suporte para múltiplos .md'
               : 'IA generativa • Slides profissionais em segundos'

@@ -18,6 +18,7 @@ import { RemoteControlModal } from "@/features/remote-control/RemoteControlModal
 import { toast } from "sonner";
 
 import { useSlidesStore, usePresentationStore, useUIStore } from "@/store";
+import { usePresentationsStore } from "@/store/presentationsStore";
 import { RemoteCommand } from "@/types/remote";
 import { PresentationShowHelp } from "./PresentationShowHelp";
 
@@ -227,6 +228,40 @@ const Presentation = () => {
     }
   }, [session, slides, currentSlide, shareContent]);
 
+  const { addPresentation, updatePresentation, getCurrentPresentation, currentPresentationId } = usePresentationsStore();
+
+  const handleSavePresentation = () => {
+    if (slides.length === 0) {
+      toast.error('Nenhum slide para salvar');
+      return;
+    }
+
+    const title = prompt('Nome da apresentação:', 'Minha Apresentação');
+    if (!title) return;
+
+    const description = prompt('Descrição (opcional):');
+
+    if (currentPresentationId) {
+      // Update existing
+      updatePresentation(currentPresentationId, {
+        title,
+        description: description || undefined,
+        slides,
+      });
+      toast.success('Apresentação atualizada!');
+    } else {
+      // Create new
+      addPresentation({
+        title,
+        description: description || undefined,
+        slides,
+      });
+      toast.success('Apresentação salva!');
+    }
+
+    navigate('/dashboard');
+  };
+
   const handleRestart = () => {
     resetSlides();
     setShowSlideList(false);
@@ -363,6 +398,7 @@ const Presentation = () => {
                 setError("");
               }}
               onRemove={handleRemoveSlide}
+              onSave={handleSavePresentation}
               highContrast={highContrast}
               onToggleContrast={() => setHighContrast(!highContrast)}
             />
@@ -401,6 +437,7 @@ const Presentation = () => {
               setDraftContent={setDraftContent}
               duplicateSlide={() => duplicateSlide(currentSlide)}
               onSaveAllSlides={saveAllSlidesToFile}
+              onSavePresentation={handleSavePresentation}
               onRestart={handleRestart}
               highContrast={highContrast}
               setHighContrast={setHighContrast}

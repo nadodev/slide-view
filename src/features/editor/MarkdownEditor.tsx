@@ -35,10 +35,10 @@ export function MarkdownEditor({
     }, [textareaRef, lineNumbersRef]);
 
     return (
-        <div className="relative w-full h-full flex bg-[#0d1117] font-mono text-sm">
+        <div className="relative w-full h-full flex bg-[#0a0a0a] font-mono text-sm">
             <div
                 ref={lineNumbersRef}
-                className="w-12 shrink-0 bg-[#0d1117] border-r border-white/5 text-right pr-3 py-4 select-none overflow-hidden text-zinc-600"
+                className="w-12 shrink-0 bg-[#0a0a0a] border-r border-white/10 text-right pr-3 py-4 select-none overflow-hidden text-white/30"
             >
                 {Array.from({ length: lineCount }).map((_, i) => (
                     <div key={i} className="leading-6 text-xs">
@@ -53,7 +53,7 @@ export function MarkdownEditor({
                 onChange={(e) => onChange(e.target.value)}
                 onKeyDown={onKeyDown}
                 onScroll={onScroll}
-                className="flex-1 w-full h-full bg-transparent text-zinc-300 p-4 resize-none focus:outline-none leading-6 custom-scrollbar"
+                className="flex-1 w-full h-full bg-transparent text-white/80 p-4 resize-none focus:outline-none leading-6 custom-scrollbar"
                 spellCheck={false}
                 placeholder="Comece a digitar seus slides em Markdown..."
             />
